@@ -56,7 +56,7 @@ export async function runAttackChecks(config) {
   });
 
   const apiResponse = await fetch(new URL('/api/notes', app), {
-    redirect: 'error',
+    redirect: 'follow',
     signal: AbortSignal.timeout(10000),
   });
 
