@@ -81,3 +81,7 @@ git grep -n -F '실습용 가상' origin/main
 Stage 2의 `/api/notes`는 비로그인 요청으로 호출할 수 있습니다. 서버 전용 Supabase 키는 서버 함수에만 존재하지만 자료 API 자체에는 아직 로그인 또는 사용자별 접근 제어가 없습니다.
 
 제작 3에서는 이 공개 API 약점을 해소했다고 쓰지 않습니다.
+
+### 최종 Production 보안 헤더 확인
+
+Production의 `/`와 `/aleph.json` 응답에서 `X-Content-Type-Options: nosniff`가 확인되지 않았습니다. 이 항목은 충족했다고 기록하지 않습니다.
