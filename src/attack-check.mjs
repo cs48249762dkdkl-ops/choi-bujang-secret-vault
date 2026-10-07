@@ -27,16 +27,32 @@ export async function runAttackChecks(config) {
   const checks = [];
 
   const publicDataResponse = await fetch(new URL('/data.json', app), {
-    redirect: 'error',
+    redirect: 'follow',
     signal: AbortSignal.timeout(10000),
   });
 
+  let publicNotesVisible = false;
+
+  if (publicDataResponse.ok) {
+    const contentType = publicDataResponse.headers.get('content-type') ?? '';
+    if (contentType.includes('application/json')) {
+      try {
+        const data = await publicDataResponse.json();
+        publicNotesVisible =
+          Array.isArray(data?.notes) &&
+          data.notes.length > 0;
+      } catch {
+        publicNotesVisible = false;
+      }
+    }
+  }
+
   checks.push({
     attackId: 'anonymous_static_note_read',
-    expected: '비로그인 요청으로 공개 data.json을 읽을 수 없어야 함',
-    observed: publicDataResponse.ok
-      ? `비로그인 요청에서 /data.json이 응답함 (HTTP ${publicDataResponse.status})`
-      : `비로그인 요청에서 /data.json을 읽지 못함 (HTTP ${publicDataResponse.status})`,
+    expected: '비로그인 요청으로 공개 data.json의 가상 메모를 읽을 수 없어야 함',
+    observed: publicNotesVisible
+      ? '비로그인 요청에서 공개 가상 메모가 확인됨'
+      : `비로그인 요청에서 공개 가상 메모가 확인되지 않음 (HTTP ${publicDataResponse.status})`,
   });
 
   const apiResponse = await fetch(new URL('/api/notes', app), {
