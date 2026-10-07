@@ -47,3 +47,37 @@
 Stage 2에서는 자료를 정적 `data.json`에서 제거하고 서버 함수로 이동했지만 `/api/notes` 엔드포인트 자체는 아직 공개적으로 호출할 수 있습니다. 로그인 또는 사용자별 접근 제어는 Stage 3에서 구현합니다.
 
 또한 Stage 1에서 이미 공개되었던 Git 커밋, 과거 배포 및 과거 공개 URL에 남아 있는 자료는 Stage 2의 변경만으로 소급하여 제거되지 않습니다.
+## 제작 3: 현재 배포와 최신 GitHub 파일 검색 확인
+
+현재 배포 파일과 GitHub 최신 파일에 이전에 공개되었던 가상 메모 문장이 남아 있는지 각각 검색합니다.
+
+### 현재 배포 파일 검색
+
+```bash
+curl -sS https://choi-bujang-secret-vault-ea82owz9x-cs48249762dkdkl-ops.vercel.app/ | grep -F '실습용 가상'
+curl -sS -o /tmp/data.json -w '%{http_code}\n' https://choi-bujang-secret-vault-ea82owz9x-cs48249762dkdkl-ops.vercel.app/data.json
+```
+
+확인 결과 현재 배포 홈페이지에서는 `실습용 가상` 문장이 검색되지 않았고, 공개 `/data.json`은 `404 Not Found`였습니다.
+
+### GitHub 최신 파일 검색
+
+```bash
+git fetch origin main
+git grep -n -F '실습용 가상' origin/main
+```
+
+확인 결과 최신 `origin/main`의 과거 공개 `data.json`에서 다음 문장이 검색되었습니다.
+
+- `실습용 가상 과제 기록`
+- `실습용 포트폴리오 기록`
+- `실습용 리추얼 기록`
+- `실습용 행정 기록`
+
+따라서 현재 배포에서 자료가 보이지 않더라도 최신 GitHub 파일에는 과거 공개 자료가 남아 있습니다. 옛 공개 커밋과 옛 배포가 남아 있는 한 과거 노출이 해소됐다고 쓰지 않습니다.
+
+### 공개 API의 남은 약점
+
+Stage 2의 `/api/notes`는 비로그인 요청으로 호출할 수 있습니다. 서버 전용 Supabase 키는 서버 함수에만 존재하지만 자료 API 자체에는 아직 로그인 또는 사용자별 접근 제어가 없습니다.
+
+제작 3에서는 이 공개 API 약점을 해소했다고 쓰지 않습니다.
