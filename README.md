@@ -23,3 +23,27 @@
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 2단계부터는 자료 보호를 구현할 때 `public/data.json`을 복사하는 1단계 빌드 흐름도 함께 바꿔야 합니다. 3단계 이후의 로그인, 허용 경로, 5단계의 원본 API 주소, 6단계 이후 정책 규칙은 해당 단계 원고와 계약에 맞춰 추가합니다. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다.
 
 `src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다. 1단계 이후 제출 묶음 계약 `aleph.defense.submission.v2`는 `scripts/bundle.mjs`에 남아 있으며, 코딩 도구가 해당 단계의 최신 배포 주소와 Git 원격을 맞춘 뒤 사용합니다.
+
+## Stage 2 저장점
+
+### 현재 기능
+
+- 공개 `public/data.json` 제공을 중단했습니다.
+- 화면은 `/api/notes` 서버 함수를 통해 Supabase의 학습용 가상 자료를 읽습니다.
+- Supabase `learning_notes`에는 `owner_id uuid`가 있으며 RLS가 활성화되어 있습니다.
+- `anon` 및 `authenticated` 역할에는 `SELECT` 권한을 부여하지 않았습니다.
+
+### Stage 2 검증
+
+- Production `/api/notes` 확인: 성공
+- `/api/notes`에서 확인된 자료: `과제`, `포트폴리오`, `아침 리추얼`
+- `/api/notes` 중복 자료: 없음
+- Production `/data.json` 확인: `404 Not Found`
+- `public/data.json`: 삭제됨
+- Vercel Production 배포: `Ready`
+
+### 공개 범위의 남은 한계
+
+Stage 2에서는 자료를 정적 `data.json`에서 제거하고 서버 함수로 이동했지만 `/api/notes` 엔드포인트 자체는 아직 공개적으로 호출할 수 있습니다. 로그인 또는 사용자별 접근 제어는 Stage 3에서 구현합니다.
+
+또한 Stage 1에서 이미 공개되었던 Git 커밋, 과거 배포 및 과거 공개 URL에 남아 있는 자료는 Stage 2의 변경만으로 소급하여 제거되지 않습니다.
