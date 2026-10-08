@@ -595,7 +595,7 @@
       }
     );
 
-    memoCancel.addEventListener(
+        memoCancel.addEventListener(
       'click',
       () => {
         memoForm.reset();
@@ -605,7 +605,17 @@
       }
     );
 
+    if (session) {
+      try {
+        await loadNotes();
+      } catch (error) {
+        memoError.textContent =
+          error.message;
+      }
+    }
+
     supabase.auth.onAuthStateChange(
+      
       async (_event, nextSession) => {
         renderAuth(nextSession);
 
