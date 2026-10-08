@@ -4,47 +4,343 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BYTE BACK | 점령된 자료실</title>
+
   <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-    body { margin: 0; min-height: 100vh; background: #101a28; color: #ecf4ff; }
-    main { max-width: 760px; margin: 0 auto; padding: 44px 22px 64px; }
-    .eyebrow { color: #8ad8df; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
-    h1 { margin: 16px 0; font-size: clamp(30px, 7vw, 48px); line-height: 1.2; }
-    p { font-size: 17px; line-height: 1.7; color: #bfd0e5; }
-    .notice { margin: 26px 0; padding: 18px; border: 1px solid #d07384; border-radius: 14px; color: #ffe3e8; background: #612a3544; }
-    ul { list-style: none; display: grid; gap: 12px; padding: 0; }
-    li { border: 1px solid #51667c; border-radius: 14px; padding: 17px 19px; background: #1a2a3d; }
-    strong { display: block; font-size: 18px; margin-bottom: 5px; }
-    li span { color: #bfd0e5; }
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #101a28;
+      color: #ecf4ff;
+    }
+
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 44px 22px 64px;
+    }
+
+    .eyebrow {
+      color: #8ad8df;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    h1 {
+      margin: 16px 0;
+      font-size: clamp(30px, 7vw, 48px);
+      line-height: 1.2;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    p {
+      font-size: 17px;
+      line-height: 1.7;
+      color: #bfd0e5;
+    }
+
+    .notice {
+      margin: 26px 0;
+      padding: 18px;
+      border: 1px solid #d07384;
+      border-radius: 14px;
+      color: #ffe3e8;
+      background: #612a3544;
+    }
+
+    .auth {
+      margin: 26px 0;
+      padding: 18px;
+      border: 1px solid #51667c;
+      border-radius: 14px;
+      background: #1a2a3d;
+    }
+
+    .auth form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .auth input,
+    .auth button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 9px;
+      border: 1px solid #51667c;
+      background: #101a28;
+      color: #ecf4ff;
+      font: inherit;
+    }
+
+    .auth button {
+      cursor: pointer;
+      background: #244a62;
+    }
+
+    .auth .secondary {
+      background: transparent;
+    }
+
+    .auth-status {
+      margin: 0 0 12px;
+      color: #8ad8df;
+    }
+
+    .auth-error {
+      min-height: 1.4em;
+      margin: 10px 0 0;
+      color: #ffb6c2;
+    }
+
+    ul {
+      list-style: none;
+      display: grid;
+      gap: 12px;
+      padding: 0;
+    }
+
+    li {
+      border: 1px solid #51667c;
+      border-radius: 14px;
+      padding: 17px 19px;
+      background: #1a2a3d;
+    }
+
+    strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    li span {
+      color: #bfd0e5;
+    }
   </style>
 </head>
+
 <body>
   <main>
     <div class="eyebrow">BYTE BACK · 1단계 피해 확인</div>
+
     <h1>점령된 자료실</h1>
-    <p>지금은 보호 장치가 없는 상태입니다. 아래 기록은 모두 실습을 위해 만든 가상 자료입니다.</p>
-    <div class="notice">로그인하지 않은 방문자도 자료를 볼 수 있습니다. 공개 범위를 확인하고, 다음 제작 단계에서 접근을 차례로 막아 주세요.</div>
-    <ul id="notes" aria-live="polite"><li>가상 자료를 불러오는 중입니다.</li></ul>
+
+    <p>
+      지금은 보호 장치가 없는 상태입니다.
+      아래 기록은 모두 실습을 위해 만든 가상 자료입니다.
+    </p>
+
+    <div class="notice">
+      로그인하지 않은 방문자도 자료를 볼 수 있습니다.
+      공개 범위를 확인하고, 다음 제작 단계에서 접근을 차례로 막아 주세요.
+    </div>
+
+    <section class="auth" aria-labelledby="auth-title">
+      <h2 id="auth-title">자료실 로그인</h2>
+
+      <p id="auth-status" class="auth-status">
+        로그인하지 않았습니다.
+      </p>
+
+      <form id="login-form">
+        <label for="email">이메일</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          required
+        >
+
+        <label for="password">비밀번호</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          required
+        >
+
+        <button type="submit">로그인</button>
+
+        <button
+          id="logout-button"
+          class="secondary"
+          type="button"
+          hidden
+        >
+          로그아웃
+        </button>
+      </form>
+
+      <p id="auth-error" class="auth-error" role="alert"></p>
+    </section>
+
+    <ul id="notes" aria-live="polite">
+      <li>가상 자료를 불러오는 중입니다.</li>
+    </ul>
   </main>
+
   <script type="module">
-    const list = document.querySelector('#notes');
+    import { createClient }
+      from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const SUPABASE_URL =
+      'https://uzacbnszzylletldncen.supabase.co';
+
+    const SUPABASE_PUBLISHABLE_KEY =
+      'sb_publishable_vsxRd4HuKoGAVLhCenTjhA_s_HdLr8K';
+
+    const supabase = createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+
+    const authStatus =
+      document.querySelector('#auth-status');
+
+    const authError =
+      document.querySelector('#auth-error');
+
+    const loginForm =
+      document.querySelector('#login-form');
+
+    const logoutButton =
+      document.querySelector('#logout-button');
+
+    function renderAuth(session) {
+      const loggedIn = Boolean(session);
+
+      authStatus.textContent = loggedIn
+        ? '로그인되었습니다.'
+        : '로그인하지 않았습니다.';
+
+      loginForm.querySelectorAll('input').forEach(input => {
+        input.hidden = loggedIn;
+      });
+
+      loginForm.querySelector(
+        'button[type="submit"]'
+      ).hidden = loggedIn;
+
+      logoutButton.hidden = !loggedIn;
+    }
+
+    loginForm.addEventListener(
+      'submit',
+      async event => {
+        event.preventDefault();
+        authError.textContent = '';
+
+        const email =
+          document.querySelector('#email').value;
+
+        const password =
+          document.querySelector('#password').value;
+
+        const { data, error } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+
+        if (error) {
+          authError.textContent =
+            `로그인 실패: ${error.message}`;
+          return;
+        }
+
+        renderAuth(data.session);
+      }
+    );
+
+    logoutButton.addEventListener(
+      'click',
+      async () => {
+        authError.textContent = '';
+
+        const { error } =
+          await supabase.auth.signOut();
+
+        if (error) {
+          authError.textContent =
+            `로그아웃 실패: ${error.message}`;
+          return;
+        }
+
+        renderAuth(null);
+      }
+    );
+
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+
+    renderAuth(session);
+
+    supabase.auth.onAuthStateChange(
+      (_event, nextSession) => {
+        renderAuth(nextSession);
+      }
+    );
+
+    const list =
+      document.querySelector('#notes');
+
     try {
-      const response = await fetch('/api/notes', { cache: 'no-store' });
-      if (!response.ok) throw new Error('공개 자료를 읽을 수 없습니다.');
-      const data = await response.json();
-      if (!Array.isArray(data.notes)) throw new Error('자료 형식이 맞지 않습니다.');
-      list.replaceChildren(...data.notes.map(note => {
-        const item = document.createElement('li');
-        const title = document.createElement('strong');
-        const content = document.createElement('span');
-        title.textContent = note.title;
-        content.textContent = note.content;
-        item.append(title, content);
-        return item;
-      }));
+      const response =
+        await fetch('/api/notes', {
+          cache: 'no-store'
+        });
+
+      if (!response.ok) {
+        throw new Error(
+          '공개 자료를 읽을 수 없습니다.'
+        );
+      }
+
+      const data =
+        await response.json();
+
+      if (!Array.isArray(data.notes)) {
+        throw new Error(
+          '자료 형식이 맞지 않습니다.'
+        );
+      }
+
+      list.replaceChildren(
+        ...data.notes.map(note => {
+          const item =
+            document.createElement('li');
+
+          const title =
+            document.createElement('strong');
+
+          const content =
+            document.createElement('span');
+
+          title.textContent = note.title;
+          content.textContent = note.content;
+
+          item.append(title, content);
+
+          return item;
+        })
+      );
     } catch (error) {
-      const item = document.createElement('li');
+      const item =
+        document.createElement('li');
+
       item.textContent = error.message;
+
       list.replaceChildren(item);
     }
   </script>
