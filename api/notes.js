@@ -204,7 +204,21 @@ export default async function handler(request, response) {
     let body;
 
     try {
-      body = await request.json();
+      const rawBody = await new Promise((resolve, reject) => {
+        let raw = '';
+
+        request.on('data', chunk => {
+          raw += chunk;
+        });
+
+        request.on('end', () => {
+          resolve(raw);
+        });
+
+        request.on('error', reject);
+      });
+
+      body = JSON.parse(rawBody);
     } catch {
       return response.status(400).json({
         error: 'INVALID_JSON'
