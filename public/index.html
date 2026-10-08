@@ -296,9 +296,20 @@
       document.querySelector('#notes');
 
     try {
+      const { data: sessionData } =
+        await supabase.auth.getSession();
+
+      const accessToken =
+        sessionData.session?.access_token;
+
       const response =
         await fetch('/api/notes', {
-          cache: 'no-store'
+          cache: 'no-store',
+          headers: accessToken
+            ? {
+                Authorization: `Bearer ${accessToken}`
+              }
+            : {}
         });
 
       if (!response.ok) {
@@ -306,7 +317,6 @@
           '공개 자료를 읽을 수 없습니다.'
         );
       }
-
       const data =
         await response.json();
 
