@@ -184,9 +184,46 @@
       <p id="auth-error" class="auth-error" role="alert"></p>
     </section>
 
-    <ul id="notes" aria-live="polite">
-      <li>가상 자료를 불러오는 중입니다.</li>
-    </ul>
+    <section id="memo-panel" hidden>
+  <h2>내 가상 메모</h2>
+
+  <form id="memo-form">
+    <input
+      id="memo-id"
+      type="hidden"
+    >
+
+    <label for="memo-title">제목</label>
+    <input
+      id="memo-title"
+      type="text"
+      required
+    >
+
+    <label for="memo-body">내용</label>
+    <textarea
+      id="memo-body"
+      required
+    ></textarea>
+
+    <button type="submit">메모 저장</button>
+
+    <button
+      id="memo-cancel"
+      type="button"
+      class="secondary"
+      hidden
+    >
+      수정 취소
+    </button>
+  </form>
+
+  <p id="memo-error" role="alert"></p>
+
+  <ul id="notes" aria-live="polite">
+    <li>가상 메모를 불러오는 중입니다.</li>
+  </ul>
+</section>
   </main>
 
   <script type="module">
@@ -338,7 +375,7 @@
             document.createElement('span');
 
           title.textContent = note.title;
-          content.textContent = note.content;
+          content.textContent = note.body;
 
           item.append(title, content);
 
@@ -353,6 +390,241 @@
 
       list.replaceChildren(item);
     }
+    const memoPanel =
+      document.querySelector('#memo-panel');
+
+    const memoForm =
+      document.querySelector('#memo-form');
+
+    const memoId =
+      document.querySelector('#memo-id');
+
+    const memoTitle =
+      document.querySelector('#memo-title');
+
+    const memoBody =
+      document.querySelector('#memo-body');
+
+    const memoError =
+      document.querySelector('#memo-error');
+
+    const memoCancel =
+      document.querySelector('#memo-cancel');
+
+    async function getAccessToken() {
+      const { data } =
+        await supabase.auth.getSession();
+
+      return data.session?.access_token;
+    }
+
+    async function loadNotes() {
+      const accessToken =
+        await getAccessToken();
+
+      if (!accessToken) {
+        memoPanel.hidden = true;
+        return;
+      }
+
+      const response =
+        await fetch('/api/notes', {
+          cache: 'no-store',
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        });
+
+      if (!response.ok) {
+        throw new Error(
+          `메모를 불러오지 못했습니다. (${response.status})`
+        );
+      }
+
+      const data =
+        await response.json();
+
+      if (!Array.isArray(data.notes)) {
+        throw new Error(
+          '메모 형식이 맞지 않습니다.'
+        );
+      }
+
+      list.replaceChildren(
+        ...data.notes.map(note => {
+          const item =
+            document.createElement('li');
+
+          const title =
+            document.createElement('strong');
+
+          const content =
+            document.createElement('span');
+
+          const editButton =
+            document.createElement('button');
+
+          const deleteButton =
+            document.createElement('button');
+
+          title.textContent = note.title;
+          content.textContent = note.body;
+
+          editButton.textContent = '수정';
+          editButton.type = 'button';
+
+          deleteButton.textContent = '삭제';
+          deleteButton.type = 'button';
+          deleteButton.className = 'secondary';
+
+          editButton.addEventListener(
+            'click',
+            () => {
+              memoId.value = note.id;
+              memoTitle.value = note.title;
+              memoBody.value = note.body;
+              memoCancel.hidden = false;
+              memoTitle.focus();
+            }
+          );
+
+          deleteButton.addEventListener(
+            'click',
+            async () => {
+              memoError.textContent = '';
+
+              const token =
+                await getAccessToken();
+
+              if (!token) {
+                memoError.textContent =
+                  '로그인이 필요합니다.';
+                return;
+              }
+
+              const response =
+                await fetch(
+                  `/api/notes/${note.id}`,
+                  {
+                    method: 'DELETE',
+                    headers: {
+                      Authorization:
+                        `Bearer ${token}`
+                    }
+                  }
+                );
+
+              if (!response.ok) {
+                memoError.textContent =
+                  `삭제 실패: HTTP ${response.status}`;
+                return;
+              }
+
+              await loadNotes();
+            }
+          );
+
+          item.append(
+            title,
+            content,
+            editButton,
+            deleteButton
+          );
+
+          return item;
+        })
+      );
+
+      memoPanel.hidden = false;
+    }
+
+    memoForm.addEventListener(
+      'submit',
+      async event => {
+        event.preventDefault();
+        memoError.textContent = '';
+
+        const token =
+          await getAccessToken();
+
+        if (!token) {
+          memoError.textContent =
+            '로그인이 필요합니다.';
+          return;
+        }
+
+        const editing =
+          Boolean(memoId.value);
+
+        const response =
+          await fetch(
+            editing
+              ? `/api/notes/${memoId.value}`
+              : '/api/notes',
+            {
+              method: editing
+                ? 'PUT'
+                : 'POST',
+              headers: {
+                'Content-Type':
+                  'application/json',
+                Authorization:
+                  `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                id: editing
+                  ? memoId.value
+                  : undefined,
+                title: memoTitle.value,
+                body: memoBody.value
+              })
+            }
+          );
+
+        if (!response.ok) {
+          memoError.textContent =
+            `저장 실패: HTTP ${response.status}`;
+          return;
+        }
+
+        memoForm.reset();
+        memoId.value = '';
+        memoCancel.hidden = true;
+
+        await loadNotes();
+      }
+    );
+
+    memoCancel.addEventListener(
+      'click',
+      () => {
+        memoForm.reset();
+        memoId.value = '';
+        memoCancel.hidden = true;
+        memoError.textContent = '';
+      }
+    );
+
+    supabase.auth.onAuthStateChange(
+      async (_event, nextSession) => {
+        renderAuth(nextSession);
+
+        if (nextSession) {
+          try {
+            await loadNotes();
+          } catch (error) {
+            memoError.textContent =
+              error.message;
+          }
+        } else {
+          memoPanel.hidden = true;
+          list.replaceChildren(
+            document.createElement('li')
+          );
+        }
+      }
+    );
+
   </script>
 </body>
 </html>
