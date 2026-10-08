@@ -60,7 +60,7 @@ export default async function handler(request, response) {
   );
 
   const pathname =
-    new URL(request.url).pathname;
+  new URL(request.url, `https://${request.headers.host}`).pathname;
 
   const parts =
     pathname.split('/').filter(Boolean);
