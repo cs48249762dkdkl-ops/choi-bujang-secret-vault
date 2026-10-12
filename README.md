@@ -1,6 +1,6 @@
 # BYTE BACK 방어전 시작 틀 R5
 
-이 저장소는 1단계에서 학생 본인이 GitHub 저장소와 Vercel 배포를 만드는 출발점입니다. 포함된 메모 네 건은 가상 자료입니다. 실제 학생 자료, 토큰, 비밀키를 넣지 마세요.
+이 저장소는 단계별 웹 방어 실습 프로젝트입니다. 자료는 학습용 가상 데이터만 사용합니다. 실제 개인정보, 비밀번호, 토큰, 비밀키를 코드나 Git에 넣지 마세요.
 
 ## 학생이 하는 일: 세 걸음
 
@@ -24,30 +24,33 @@
 
 `src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다. 1단계 이후 제출 묶음 계약 `aleph.defense.submission.v2`는 `scripts/bundle.mjs`에 남아 있으며, 코딩 도구가 해당 단계의 최신 배포 주소와 Git 원격을 맞춘 뒤 사용합니다.
 
-## Stage 2 저장점
+## Stage 2~4 저장점
 
-### 현재 기능
+### 현재 구현 및 확인 상태
 
-- 공개 `public/data.json` 제공을 중단했습니다.
-- 화면은 `/api/notes` 서버 함수를 통해 Supabase의 학습용 가상 자료를 읽습니다.
-- Supabase `learning_notes`에는 `owner_id uuid`가 있으며 RLS가 활성화되어 있습니다.
-- `anon` 및 `authenticated` 역할에는 `SELECT` 권한을 부여하지 않았습니다.
+- 공개 `public/data.json` 제공을 중단하고 `/api/notes` 서버 API를 사용합니다.
+- Supabase `learning_notes` 테이블에 학습용 가상 메모와 `owner_id uuid`가 있습니다.
+- 비로그인 API 요청은 `401 LOGIN_REQUIRED` JSON 응답으로 거부되는 것을 확인했습니다.
+- 메모 목록 조회 및 생성·수정·삭제 API는 로그인한 사용자 ID를 기준으로 소유권을 제한합니다.
+- 개별 메모 GET·PUT·DELETE에도 `owner_id` 필터를 적용하는 변경이 로컬 작업 중입니다.
+- Supabase RLS가 활성화되어 있고 SELECT·INSERT·UPDATE·DELETE 정책은 `auth.uid() = owner_id`를 기준으로 설정했습니다.
+- `anon` 역할에는 테이블 권한이 없고 `authenticated`에는 필요한 CRUD 권한이 설정된 것을 확인했습니다.
+- `/data.json`은 Production에서 `404 Not Found`를 반환하며 `X-Content-Type-Options: nosniff` 헤더를 확인했습니다.
 
-### Stage 2 검증
+### 아직 완료로 단정하지 않을 항목
 
-- Production `/api/notes` 확인: 성공
-- `/api/notes`에서 확인된 자료: `과제`, `포트폴리오`, `아침 리추얼`
-- `/api/notes` 중복 자료: 없음
-- Production `/data.json` 확인: `404 Not Found`
-- `public/data.json`: 삭제됨
-- Vercel Production 배포: `Ready`
+- 로컬의 개별 메모 소유권 필터 변경은 아직 커밋 및 Production 배포 전입니다.
+- 두 계정 사이에서 다른 사용자의 메모를 조회·수정·삭제할 수 없는지 실제 교차 계정 테스트가 필요합니다.
+- RLS 정책은 설정했지만 실제 사용자 JWT로 RLS를 통과하는지 검증해야 합니다.
+- 로컬 빌드 성공은 Production 배포 성공이나 심판 판정을 증명하지 않습니다.
 
-### 공개 범위의 남은 한계
+### 실행 및 확인
 
-Stage 2에서는 자료를 정적 `data.json`에서 제거하고 서버 함수로 이동했지만 `/api/notes` 엔드포인트 자체는 아직 공개적으로 호출할 수 있습니다. 로그인 또는 사용자별 접근 제어는 Stage 3에서 구현합니다.
-
-또한 Stage 1에서 이미 공개되었던 Git 커밋, 과거 배포 및 과거 공개 URL에 남아 있는 자료는 Stage 2의 변경만으로 소급하여 제거되지 않습니다.
-## 제작 3: 현재 배포와 최신 GitHub 파일 검색 확인
+```bash
+node --check api/notes.js
+git diff --check
+npm run build -- --local
+```
 
 현재 배포 파일과 GitHub 최신 파일에 이전에 공개되었던 가상 메모 문장이 남아 있는지 각각 검색합니다.
 
@@ -56,7 +59,7 @@ Stage 2에서는 자료를 정적 `data.json`에서 제거하고 서버 함수�
 ```bash
 curl -sS https://choi-bujang-secret-vault-ea82owz9x-cs48249762dkdkl-ops.vercel.app/ | grep -F '실습용 가상'
 curl -sS -o /tmp/data.json -w '%{http_code}\n' https://choi-bujang-secret-vault-ea82owz9x-cs48249762dkdkl-ops.vercel.app/data.json
-```
+### 현재 배포 파일 검색
 
 확인 결과 현재 배포 홈페이지에서는 `실습용 가상` 문장이 검색되지 않았고, 공개 `/data.json`은 `404 Not Found`였습니다.
 

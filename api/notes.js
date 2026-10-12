@@ -87,6 +87,7 @@ export default async function handler(request, response) {
         .from('learning_notes')
         .select('memo_id, title, content')
         .eq('memo_id', memoId)
+        .eq('owner_id', identity.userId)
         .maybeSingle();
 
       if (error) {
@@ -241,6 +242,7 @@ export default async function handler(request, response) {
         content: body.body
       })
       .eq('memo_id', memoId)
+      .eq('owner_id', identity.userId)
       .select('memo_id, title, content')
       .maybeSingle();
 
@@ -274,6 +276,7 @@ export default async function handler(request, response) {
       .from('learning_notes')
       .delete()
       .eq('memo_id', memoId)
+      .eq('owner_id', identity.userId)
       .select('memo_id')
       .maybeSingle();
 
