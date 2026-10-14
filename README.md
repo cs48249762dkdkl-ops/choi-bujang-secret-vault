@@ -63,3 +63,19 @@ git grep -n -F '실습용 가상' origin/main
 ```
 
 검색 결과에 과거 공개 메모가 나타나면 현재 API의 소유권 검사와 별도로 관리해야 합니다.
+
+## 6단계 저장점 — 등록 기기 확인
+
+- `src/decider.mjs`는 엔진이 제공하는 `request.deviceRegistered` 값을 확인한다.
+- 등록된 기기의 정상 요청은 허용한다.
+- 미등록 기기의 요청은 `device_not_registered` 사유로 거부한다.
+- 최근 위험 신호가 감지되면 추가 인증 여부도 확인한다.
+- 판정 결과는 `schema`, `requestId`, `decision`, `reasonCode`, `ruleIds`의 다섯 필드로 반환한다.
+
+### 검증 방법
+
+```bash
+npm run decider:test
+```
+
+가상 요청 테스트에서 등록 기기, 미등록 기기, 복합 이상 접속, 추가 인증 후 복합 이상 접속을 확인한다. 이 테스트 결과는 실제 심판 통과 증거가 아니다.
