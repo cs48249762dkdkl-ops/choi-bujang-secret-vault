@@ -9,6 +9,7 @@ const ALLOWED_REQUEST_KEYS = new Set([
 export const RULE_IDS = Object.freeze([
   'device_registered',
   'step_up_required',
+  'resource_zone',
 ]);
 
 function validRequest(request) {
