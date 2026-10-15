@@ -65,12 +65,24 @@ export default async function handler(request, response) {
   const parts =
     pathname.split('/').filter(Boolean);
 
-  const memoId =
+  const isNotesCollection =
+    parts.length === 2 &&
+    parts[0] === 'api' &&
+    parts[1] === 'notes';
+
+  const isNoteItem =
     parts.length === 3 &&
     parts[0] === 'api' &&
-    parts[1] === 'notes'
-      ? parts[2]
-      : null;
+    parts[1] === 'notes' &&
+    parts[2].length > 0;
+
+  const memoId = isNoteItem ? parts[2] : null;
+
+  if (!isNotesCollection && !isNoteItem) {
+    return response.status(404).json({
+      error: 'RESOURCE_NOT_FOUND'
+    });
+  }
 
   const UUID =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
