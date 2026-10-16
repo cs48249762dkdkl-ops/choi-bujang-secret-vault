@@ -1,36 +1,71 @@
 /**
  * Safe restore gate.
- * This module never changes notes or policies.
- * A caller must provide an independently trusted backup
- * and a verifier before any restore callback can run.
+ *
+ * Backup consistency alone does not prove provenance.
+ * Actual restore remains blocked unless an independent
+ * trust check and before/after verification are provided.
  */
 export async function runRestoreGate({
   backup,
   verifyBackup,
+  verifyTrust,
   restoreOne,
+  verifyAfterRestore,
 }) {
   if (backup == null) {
-    return { restored: false, status: 'BLOCKED', reason: 'S10_BACKUP_UNVERIFIED' };
+    return {
+      restored: false,
+      status: 'BLOCKED',
+      reason: 'S10_BACKUP_UNVERIFIED',
+    };
   }
 
-  if (typeof verifyBackup !== 'function' ||
-      typeof restoreOne !== 'function') {
-    return { restored: false, status: 'BLOCKED', reason: 'INVALID_CONFIGURATION' };
+  if (
+    typeof verifyBackup !== 'function' ||
+    typeof verifyTrust !== 'function' ||
+    typeof restoreOne !== 'function' ||
+    typeof verifyAfterRestore !== 'function'
+  ) {
+    return {
+      restored: false,
+      status: 'BLOCKED',
+      reason: 'INVALID_CONFIGURATION',
+    };
   }
 
-  let verification;
+  let backupVerification;
+  let trustVerification;
+
   try {
-    verification = await verifyBackup(backup);
+    backupVerification = await verifyBackup(backup);
+
+    if (backupVerification?.valid !== true) {
+      return {
+        restored: false,
+        status: 'BLOCKED',
+        reason: 'S10_BACKUP_UNVERIFIED',
+      };
+    }
+
+    trustVerification = await verifyTrust(backup);
   } catch {
-    return { restored: false, status: 'BLOCKED', reason: 'S10_BACKUP_UNVERIFIED' };
+    return {
+      restored: false,
+      status: 'BLOCKED',
+      reason: 'S10_BACKUP_UNVERIFIED',
+    };
   }
 
-  if (verification?.valid !== true) {
-    return { restored: false, status: 'BLOCKED', reason: 'S10_BACKUP_UNVERIFIED' };
+  if (trustVerification?.trusted !== true) {
+    return {
+      restored: false,
+      status: 'BLOCKED',
+      reason: 'S10_BACKUP_UNVERIFIED',
+    };
   }
 
-  // This gate intentionally does not call a production restore API.
-  // A separate, explicitly reviewed single-record restore implementation is required.
+  // Do not execute an operational restore until a separately
+  // reviewed single-record implementation is available.
   return {
     restored: false,
     status: 'VERIFIED_BUT_NOT_RESTORED',
