@@ -95,3 +95,26 @@ npm run decider:test
 npm run decider:test
 npm run fixture:7
 ```
+
+## 8단계 저장점 — 자료 구역 접근 제한
+
+- `src/decider.mjs`에 `resource_zone` 규칙을 추가했다.
+- 서비스 메모의 허용 경로와 GET 요청 형식을 확인한다.
+- 허용 범위를 벗어난 요청은 기존 판정 응답 형식을 유지하며 거부한다.
+- 이 규칙의 존재만으로 API 전체의 사용자별 소유권 검증이 증명되는 것은 아니다.
+
+## 9단계 저장점 — 폭주 조회 탐지
+
+- `src/detect.mjs`의 `detect(events)`는 `at`, `method`, `identity.sub`만 사용한다.
+- 동일한 사용자 주체의 GET 요청이 10분 이내 120건을 초과하면 `propose_revocation`을 제안한다.
+- 120건 이하, 서로 다른 사용자, 10분을 벗어난 요청은 이 규칙만으로 회수 제안을 하지 않는다.
+- 의심 결과는 `action`, `reasonCode`, `subject`를 반환하며 정상 결과는 `action: "observe"`만 반환한다.
+- `npm run detect:test`에서 정상 조회, 120건, 121건, 폭주 조회, 사용자 분리, 분산 조회 등 6개 테스트가 통과했다.
+- 이 결과는 가상 사건에 대한 로컬 테스트이며 실제 세션 회수, 접속 차단 또는 심판 통과를 증명하지 않는다.
+
+### 9단계 로컬 검사
+
+```bash
+npm run detect:test
+git diff --check
+```
