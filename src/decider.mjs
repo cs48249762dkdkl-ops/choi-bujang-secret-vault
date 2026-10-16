@@ -143,7 +143,7 @@ export async function decide(request) {
 
   // Stage 8: 노트 영역과 허용된 경로 모양을 명시적으로 검사한다.
   // GET /notes 목록 경로와 다른 서비스 영역은 허용하지 않는다.
-    const pathAllowed = request.service === 'notes' && (
+  const pathAllowed = request.service === 'notes' && (
     (
       request.method === 'GET'
       && request.path === '/notes'
