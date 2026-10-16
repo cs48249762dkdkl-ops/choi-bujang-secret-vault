@@ -141,25 +141,13 @@ export async function decide(request) {
     };
   }
 
-  // Stage 8: 노트 영역과 허용된 경로 모양을 명시적으로 검사한다.
-  // GET /notes 목록 경로와 다른 서비스 영역은 허용하지 않는다.
-  const pathAllowed = request.service === 'notes' && (
-    (
-      request.method === 'GET'
-      && request.path === '/notes'
-      && request.route === 'GET /notes'
-    )
-    || (
-      request.method === 'POST'
-      && request.path === '/notes'
-      && request.route === 'POST /notes'
-    )
-    || (
-      ['GET', 'PUT', 'DELETE'].includes(request.method)
-      && /^\/notes\/[A-Za-z0-9_-]+$/.test(request.path)
-      && request.route === `${request.method} /notes/:id`
-    )
-  );
+  // Stage 8: 개인 메모의 단건 조회만 허용한다.
+  // 전체 목록, 쓰기 동작, 다른 서비스 구역은 거부한다.
+  const pathAllowed =
+    request.service === 'notes'
+    && request.method === 'GET'
+    && /^\/notes\/[A-Za-z0-9_-]+$/.test(request.path)
+    && request.route === 'GET /notes/:id';
 
   if (!pathAllowed) {
     return {
