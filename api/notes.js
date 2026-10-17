@@ -1,3 +1,4 @@
+import { checkDeviceApproval } from '../src/device-approval.mjs';
 import { randomUUID } from 'node:crypto';
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import { createClient } from '@supabase/supabase-js';
@@ -92,6 +93,29 @@ export default async function handler(request, response) {
       error: 'INVALID_ID'
     });
   }
+
+  const deviceId = request.headers['x-device-id'];
+  const approval = await checkDeviceApproval({
+    supabase,
+    ownerId: identity.userId,
+    deviceId
+  });
+
+  if (!approval.approved) {
+    return response.status(403).json({
+      error: 'DEVICE_APPROVAL_REQUIRED',
+      approvalStatus: approval.status,
+      deviceProofVerified: false
+    });
+  }
+
+  // 실제 기기 소유 증명(WebAuthn 등)이 구현되기 전에는
+  // 승인 기록이나 X-Device-ID만으로 자료 접근을 허용하지 않는다.
+  return response.status(403).json({
+    error: 'DEVICE_PROOF_REQUIRED',
+    approvalStatus: approval.status,
+    deviceProofVerified: false
+  });
 
   if (request.method === 'GET') {
     if (memoId) {

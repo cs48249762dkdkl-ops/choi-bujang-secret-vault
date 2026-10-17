@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BYTE BACK | 점령된 자료실</title>
+  <title>BYTE BACK | 나만의 자료실</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#101a28">
 
   <style>
     :root {
@@ -139,9 +141,40 @@
     </p>
 
     <div class="notice">
-      로그인하지 않은 방문자도 자료를 볼 수 있습니다.
-      공개 범위를 확인하고, 다음 제작 단계에서 접근을 차례로 막아 주세요.
-    </div>
+  보호 자료는 서버의 로그인 및 접근 제어를 거쳐야 합니다.
+  현재 실제 기기 소유 증명은 미완성이므로 보호 자료 접근이 차단됩니다.
+  화면의 승인 상태만으로 자료 접근이 허용되지는 않습니다.
+</div>
+
+    <section class="auth" aria-labelledby="app-status-title">
+      <h2 id="app-status-title">앱 및 기기 상태</h2>
+      <p>설치형 웹앱 설정이 준비되었습니다.</p>
+      <p id="install-status" role="status">앱 설치 여부를 확인하지 않았습니다.</p>
+      <p id="device-status" role="status">
+        기기 승인 확인 전입니다. 앱 설치만으로 기기가 승인되지는 않습니다.
+      </p>
+
+<label for="device-id-input">기기 ID (16자리 16진수)</label>
+<input
+  id="device-id-input"
+  type="text"
+  inputmode="text"
+  pattern="[0-9a-f]{16}"
+  maxlength="16"
+  autocomplete="off"
+  placeholder="예: 0123456789abcdef"
+/>
+<button id="check-device-status" type="button">
+  승인 상태 조회
+</button>
+<p>
+  기기 ID는 인증 증명이 아닙니다. 승인 상태가 승인됨이어도
+  실제 기기 인증이 완료될 때까지 자료 접근은 차단됩니다.
+</p>
+
+      <p>오프라인에서는 자료실 서버의 승인 상태를 확인할 수 없으므로 보호 자료를 이용하지 마세요.</p>
+      <button id="install-button" type="button" hidden>앱 설치</button>
+    </section>
 
     <section class="auth" aria-labelledby="auth-title">
       <h2 id="auth-title">자료실 로그인</h2>
@@ -635,6 +668,43 @@
       }
     );
 
+
+    const installButton = document.querySelector('#install-button');
+    const installStatus = document.querySelector('#install-status');
+    let installPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      installPrompt = event;
+      installButton.hidden = false;
+      installStatus.textContent = '설치할 수 있습니다. 설치는 기기 승인을 의미하지 않습니다.';
+    });
+
+    installButton.addEventListener('click', async () => {
+      if (!installPrompt) {
+        installStatus.textContent = '이 브라우저에서는 설치 요청을 사용할 수 없습니다.';
+        return;
+      }
+
+      installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      installStatus.textContent = choice.outcome === 'accepted'
+        ? '설치 요청을 수락했습니다. 서버의 기기 승인은 별도로 확인해야 합니다.'
+        : '설치가 취소되었습니다.';
+      installPrompt = null;
+      installButton.hidden = true;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installStatus.textContent = '앱 설치가 확인되었습니다. 기기 승인 상태는 별도로 확인해야 합니다.';
+      installButton.hidden = true;
+    });
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      installStatus.textContent = '설치형 앱으로 실행 중입니다. 기기 승인 상태는 별도로 확인해야 합니다.';
+    } else if (!('onbeforeinstallprompt' in window)) {
+      installStatus.textContent = '브라우저가 설치 안내를 지원하지 않을 수 있습니다. 브라우저 메뉴를 확인하세요.';
+    }
   </script>
 </body>
 </html>

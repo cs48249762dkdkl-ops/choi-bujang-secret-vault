@@ -18,15 +18,18 @@ test('패키징 함수 기준표는 원본 시작 틀의 API와 일치한다', a
   assert.deepEqual(baseline.allowedNew, ['api/ai.js', 'api/threat-intel.js']);
 
   // 현재 프로젝트의 API와 원본 시작 틀의 기준표는 별도로 검사한다.
-  assert.deepEqual(
+   assert.deepEqual(
     actual,
     [
       'api/ai.js',
+      'api/device/register.js',
+      'api/device/status.js',
       'api/notes.js',
       'api/notes/[id].js',
+      'api/notes/restore.js',
       'api/threat-intel.js',
     ].sort(),
-  );
+ );
 });
 
 test('미구현 서버 뼈대는 성공이나 로그인 통과로 가장하지 않는다', async () => {
