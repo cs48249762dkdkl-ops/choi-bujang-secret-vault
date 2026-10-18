@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8">
@@ -285,7 +285,73 @@
 
     const logoutButton =
       document.querySelector('#logout-button');
+    const deviceStatus =
+      document.querySelector('#device-status');
+    const deviceIdInput =
+      document.querySelector('#device-id-input');
+    const checkDeviceStatusButton =
+      document.querySelector('#check-device-status');
 
+    checkDeviceStatusButton.addEventListener('click', async () => {
+      deviceStatus.textContent = '';
+
+      const deviceId = deviceIdInput.value.trim();
+
+      if (!/^[0-9a-f]{16}$/.test(deviceId)) {
+        deviceStatus.textContent =
+          'Device ID must be 16 lowercase hexadecimal characters.';
+        return;
+      }
+
+      const { data, error } = await supabase.auth.getSession();
+      const accessToken = data?.session?.access_token;
+
+      if (error || !accessToken) {
+        deviceStatus.textContent =
+          'Please sign in before checking device approval status.';
+        return;
+      }
+
+      checkDeviceStatusButton.disabled = true;
+
+      try {
+        const response = await fetch(
+          `/api/device/status?deviceId=${encodeURIComponent(deviceId)}`,
+          {
+            method: 'GET',
+            cache: 'no-store',
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || `HTTP ${response.status}`);
+        }
+
+        const labels = {
+          approved: 'approved',
+          pending: 'pending',
+          rejected: 'rejected',
+          not_registered: 'not registered'
+        };
+
+        const label =
+          labels[result.approvalStatus] || 'unknown status';
+
+        deviceStatus.textContent =
+          `Server approval status: ${label}. ` +
+          'Device ownership proof is not verified; protected data remains blocked.';
+      } catch (error) {
+        deviceStatus.textContent =
+          `Device status lookup failed: ${error.message}`;
+      } finally {
+        checkDeviceStatusButton.disabled = false;
+      }
+    });
     function renderAuth(session) {
       const loggedIn = Boolean(session);
 
@@ -364,65 +430,6 @@
 
     const list =
       document.querySelector('#notes');
-
-    try {
-      const { data: sessionData } =
-        await supabase.auth.getSession();
-
-      const accessToken =
-        sessionData.session?.access_token;
-
-      const response =
-        await fetch('/api/notes', {
-          cache: 'no-store',
-          headers: accessToken
-            ? {
-                Authorization: `Bearer ${accessToken}`
-              }
-            : {}
-        });
-
-      if (!response.ok) {
-        throw new Error(
-          '공개 자료를 읽을 수 없습니다.'
-        );
-      }
-      const data =
-        await response.json();
-
-      if (!Array.isArray(data.notes)) {
-        throw new Error(
-          '자료 형식이 맞지 않습니다.'
-        );
-      }
-
-      list.replaceChildren(
-        ...data.notes.map(note => {
-          const item =
-            document.createElement('li');
-
-          const title =
-            document.createElement('strong');
-
-          const content =
-            document.createElement('span');
-
-          title.textContent = note.title;
-          content.textContent = note.body;
-
-          item.append(title, content);
-
-          return item;
-        })
-      );
-    } catch (error) {
-      const item =
-        document.createElement('li');
-
-      item.textContent = error.message;
-
-      list.replaceChildren(item);
-    }
     const memoPanel =
       document.querySelector('#memo-panel');
 
