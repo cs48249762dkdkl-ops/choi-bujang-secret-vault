@@ -167,6 +167,7 @@
 <button id="check-device-status" type="button">
   승인 상태 조회
 </button>
+<button id="register-device" type="button">이 기기 등록 요청</button>
 <p>
   기기 ID는 인증 증명이 아닙니다. 승인 상태가 승인됨이어도
   실제 기기 인증이 완료될 때까지 자료 접근은 차단됩니다.
@@ -352,6 +353,57 @@
         checkDeviceStatusButton.disabled = false;
       }
     });
+    const registerDeviceButton =
+      document.querySelector('#register-device');
+
+    registerDeviceButton.addEventListener('click', async () => {
+      deviceStatus.textContent = '';
+
+      const deviceId = deviceIdInput.value.trim();
+
+      if (!/^[0-9a-f]{16}$/.test(deviceId)) {
+        deviceStatus.textContent =
+          'Device ID must be 16 lowercase hexadecimal characters.';
+        return;
+      }
+
+      registerDeviceButton.disabled = true;
+
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        const accessToken = data?.session?.access_token;
+
+        if (error || !accessToken) {
+          throw new Error('Please sign in before registering a device.');
+        }
+
+        const response = await fetch('/api/device/register', {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ deviceId })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || `HTTP ${response.status}`);
+        }
+
+        deviceStatus.textContent =
+          `Registration result: ${result.approvalStatus}. ` +
+          'Device ownership proof is not verified; protected data remains blocked.';
+      } catch (error) {
+        deviceStatus.textContent =
+          `Device registration failed: ${error.message}`;
+      } finally {
+        registerDeviceButton.disabled = false;
+      }
+    });
+
     function renderAuth(session) {
       const loggedIn = Boolean(session);
 
