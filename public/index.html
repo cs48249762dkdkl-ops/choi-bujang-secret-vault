@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8">
@@ -705,6 +705,18 @@
     } else if (!('onbeforeinstallprompt' in window)) {
       installStatus.textContent = '브라우저가 설치 안내를 지원하지 않을 수 있습니다. 브라우저 메뉴를 확인하세요.';
     }
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      await navigator.serviceWorker.register('/sw.js');
+      console.log('BYTE BACK 서비스 워커 등록 성공');
+    } catch (error) {
+      console.error('서비스 워커 등록 실패:', error);
+    }
+  });
+}
+
   </script>
 </body>
 </html>
