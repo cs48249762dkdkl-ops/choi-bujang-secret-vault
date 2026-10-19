@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+﻿import { createClient } from '@supabase/supabase-js';
 import { createLoginVerifier } from './verify-login.mjs';
 
 export async function createDeviceApiContext(request) {
@@ -30,22 +30,34 @@ export async function createDeviceApiContext(request) {
     return { errorStatus: 500, error: 'LOGIN_VERIFIER_CONFIG_INVALID' };
   }
 
-  const identity = await verifyLogin(request.headers.authorization);
+  let identity;
+
+  try {
+    identity = await verifyLogin(request.headers.authorization);
+  } catch {
+    return { errorStatus: 401, error: 'LOGIN_REQUIRED' };
+  }
 
   if (!identity || identity.kind !== 'student') {
     return { errorStatus: 401, error: 'LOGIN_REQUIRED' };
   }
 
-  const supabase = createClient(
-    supabaseUrl,
-    supabaseSecretKey,
-    {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false
+  let supabase;
+
+  try {
+    supabase = createClient(
+      supabaseUrl,
+      supabaseSecretKey,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
       }
-    }
-  );
+    );
+  } catch {
+    return { errorStatus: 500, error: 'SUPABASE_CLIENT_INIT_FAILED' };
+  }
 
   return { identity, supabase };
 }

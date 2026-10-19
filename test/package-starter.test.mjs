@@ -15,7 +15,7 @@ test('패키징 함수 기준표는 원본 시작 틀의 API와 일치한다', a
   assert.equal(baseline.version, 1);
   assert.equal(baseline.starter, 'ChoiTimo/aleph-defense-starter');
   assert.deepEqual(baseline.functions, []);
-  assert.deepEqual(baseline.allowedNew, ['api/ai.js', 'api/threat-intel.js']);
+  assert.deepEqual(baseline.allowedNew, ['api/ai.js', 'api/threat-intel.js', 'api/device/webauthn/register-options.js', 'api/device/webauthn/register-verify.js', 'api/device/webauthn/authentication-options.js', 'api/device/webauthn/authentication-verify.js']);
 
   // 현재 프로젝트의 API와 원본 시작 틀의 기준표는 별도로 검사한다.
    assert.deepEqual(
@@ -28,6 +28,10 @@ test('패키징 함수 기준표는 원본 시작 틀의 API와 일치한다', a
       'api/notes/[id].js',
       'api/notes/restore.js',
       'api/threat-intel.js',
+      'api/device/webauthn/register-options.js',
+      'api/device/webauthn/register-verify.js',
+      'api/device/webauthn/authentication-options.js',
+      'api/device/webauthn/authentication-verify.js',
     ].sort(),
  );
 });

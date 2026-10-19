@@ -272,7 +272,13 @@
 
     const supabase = createClient(
       SUPABASE_URL,
-      SUPABASE_PUBLISHABLE_KEY
+      SUPABASE_PUBLISHABLE_KEY,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      }
     );
 
     const authStatus =
@@ -343,9 +349,18 @@
         const label =
           labels[result.approvalStatus] || 'unknown status';
 
-        deviceStatus.textContent =
-          `Server approval status: ${label}. ` +
-          'Device ownership proof is not verified; protected data remains blocked.';
+        const proofVerified = result.deviceProofVerified === true;
+
+        if (result.approvalStatus === 'approved' && proofVerified) {
+          deviceStatus.textContent =
+            'Server approval and device ownership proof verified.';
+        } else if (result.approvalStatus === 'approved') {
+          deviceStatus.textContent =
+            'Device approval confirmed by server, but ownership proof is not verified. Protected data remains blocked.';
+        } else {
+          deviceStatus.textContent =
+            `Server approval status: ${label}. Protected data remains blocked.`;
+        }
       } catch (error) {
         deviceStatus.textContent =
           `Device status lookup failed: ${error.message}`;
@@ -697,32 +712,17 @@
       }
     );
 
-    if (session) {
-      try {
-        await loadNotes();
-      } catch (error) {
-        memoError.textContent =
-          error.message;
-      }
-    }
+    memoPanel.hidden = true;
 
     supabase.auth.onAuthStateChange(
-      
-      async (_event, nextSession) => {
+      (_event, nextSession) => {
         renderAuth(nextSession);
 
-        if (nextSession) {
-          try {
-            await loadNotes();
-          } catch (error) {
-            memoError.textContent =
-              error.message;
-          }
-        } else {
-          memoPanel.hidden = true;
-          list.replaceChildren(
-            document.createElement('li')
-          );
+        memoPanel.hidden = true;
+        list.replaceChildren(document.createElement('li'));
+
+        if (!nextSession) {
+          memoError.textContent = '';
         }
       }
     );
