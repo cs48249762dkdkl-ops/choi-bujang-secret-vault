@@ -1,5 +1,7 @@
-﻿import { createDeviceApiContext } from '../../../src/device-api.mjs';
+import { createDeviceApiContext } from '../../../src/device-api.mjs';
 import { verifyAndUpdateAuthentication } from '../../../src/webauthn.mjs';
+import { createDeviceSessionToken } from '../../../src/device-session.mjs';
+import { isDeviceApproved } from '../../../src/device-approval.mjs';
 
 const DEVICE_ID = /^[0-9a-f]{16}$/u;
 const UUID =
@@ -50,7 +52,7 @@ export default async function handler(request, response) {
   const ownerId = context.identity.userId;
   const { data: device, error: deviceError } = await context.supabase
     .from('registered_devices')
-    .select('device_id, approval_status')
+    .select('device_id, owner_id, approval_status, approved_at')
     .eq('device_id', deviceId)
     .eq('owner_id', ownerId)
     .maybeSingle();
@@ -63,7 +65,7 @@ export default async function handler(request, response) {
     return response.status(403).json({ error: 'DEVICE_NOT_REGISTERED' });
   }
 
-  if (device.approval_status !== 'approved') {
+  if (!isDeviceApproved(device, ownerId, deviceId)) {
     return response.status(403).json({ error: 'DEVICE_APPROVAL_REQUIRED' });
   }
 
@@ -76,7 +78,49 @@ export default async function handler(request, response) {
       response: credentialResponse,
     });
 
-    return response.status(200).json(result);
+    if (result?.verified !== true) {
+      return response.status(401).json({
+        error: 'WEBAUTHN_AUTHENTICATION_NOT_VERIFIED'
+      });
+    }
+
+    const { data: currentDevice, error: currentDeviceError } =
+      await context.supabase
+        .from('registered_devices')
+        .select('device_id, owner_id, approval_status, approved_at')
+        .eq('device_id', deviceId)
+        .eq('owner_id', ownerId)
+        .maybeSingle();
+
+    if (currentDeviceError) {
+      return response.status(500).json({
+        error: 'DEVICE_APPROVAL_RECHECK_FAILED'
+      });
+    }
+
+    if (
+      !currentDevice ||
+      !isDeviceApproved(currentDevice, ownerId, deviceId)
+    ) {
+      return response.status(403).json({
+        error: 'DEVICE_APPROVAL_REQUIRED'
+      });
+    }
+
+    const sessionToken = await createDeviceSessionToken({
+      ownerId,
+      deviceId
+    });
+
+    response.setHeader(
+      'Set-Cookie',
+      `device_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=900`
+    );
+
+    return response.status(200).json({
+      verified: true,
+      sessionExpiresIn: 900
+    });
   } catch (error) {
     const statusByError = {
       INVALID_OWNER_ID: 400,
@@ -110,3 +154,4 @@ export default async function handler(request, response) {
     });
   }
 }
+

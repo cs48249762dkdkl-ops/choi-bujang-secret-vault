@@ -559,10 +559,23 @@
         if (result.verified !== true) {
           throw new Error('서버에서 기기 인증을 확인하지 못했습니다.');
         }
+        memoPanel.hidden = true;
 
-        deviceStatus.textContent =
-          '기기 인증이 서버에서 확인되었습니다. ' +
-          '자료 API의 소유 증명 검증은 별도로 필요하므로 자료 접근은 계속 차단됩니다.';
+        try {
+          await loadNotes();
+
+          if (memoPanel.hidden) {
+            throw new Error('자료실 세션을 확인하지 못했습니다.');
+          }
+
+          deviceStatus.textContent =
+            '기기 인증과 자료실 접근 검증이 완료되었습니다.';
+        } catch (notesError) {
+          memoPanel.hidden = true;
+          list.replaceChildren();
+          deviceStatus.textContent =
+            `자료실 접근 실패: ${notesError.message}`;
+        }
       } catch (error) {
         deviceStatus.textContent =
           `기기 인증 실패: ${error.message || '요청을 완료하지 못했습니다.'}`;
@@ -678,125 +691,103 @@
     }
 
     async function loadNotes() {
-      const accessToken =
-        await getAccessToken();
+      memoPanel.hidden = true;
+      list.replaceChildren();
 
-      if (!accessToken) {
-        memoPanel.hidden = true;
-        return;
-      }
+      try {
+        const accessToken = await getAccessToken();
 
-      const response =
-        await fetch('/api/notes', {
+        if (!accessToken) {
+          return;
+        }
+
+        const response = await fetch('/api/notes', {
           cache: 'no-store',
           headers: {
             Authorization: `Bearer ${accessToken}`
           }
         });
 
-      if (!response.ok) {
-        throw new Error(
-          `메모를 불러오지 못했습니다. (${response.status})`
-        );
-      }
+        if (!response.ok) {
+          throw new Error(
+            `메모를 불러오지 못했습니다. (${response.status})`
+          );
+        }
 
-      const data =
-        await response.json();
+        const data = await response.json();
 
-      if (!Array.isArray(data.notes)) {
-        throw new Error(
-          '메모 형식이 맞지 않습니다.'
-        );
-      }
+        if (!Array.isArray(data.notes)) {
+          throw new Error('메모 형식이 맞지 않습니다.');
+        }
 
-      list.replaceChildren(
-        ...data.notes.map(note => {
-          const item =
-            document.createElement('li');
+        list.replaceChildren(
+          ...data.notes.map(note => {
+            const item = document.createElement('li');
+            const title = document.createElement('strong');
+            const content = document.createElement('span');
+            const editButton = document.createElement('button');
+            const deleteButton = document.createElement('button');
 
-          const title =
-            document.createElement('strong');
+            title.textContent = note.title;
+            content.textContent = note.body;
 
-          const content =
-            document.createElement('span');
-
-          const editButton =
-            document.createElement('button');
-
-          const deleteButton =
-            document.createElement('button');
-
-          title.textContent = note.title;
-          content.textContent = note.body;
-
-          editButton.textContent = '수정';
-          editButton.type = 'button';
-
-          deleteButton.textContent = '삭제';
-          deleteButton.type = 'button';
-          deleteButton.className = 'secondary';
-
-          editButton.addEventListener(
-            'click',
-            () => {
+            editButton.textContent = '수정';
+            editButton.type = 'button';
+            editButton.addEventListener('click', () => {
               memoId.value = note.id;
               memoTitle.value = note.title;
               memoBody.value = note.body;
               memoCancel.hidden = false;
               memoTitle.focus();
-            }
-          );
+            });
 
-          deleteButton.addEventListener(
-            'click',
-            async () => {
+            deleteButton.textContent = '삭제';
+            deleteButton.type = 'button';
+            deleteButton.className = 'secondary';
+            deleteButton.addEventListener('click', async () => {
               memoError.textContent = '';
 
-              const token =
-                await getAccessToken();
+              try {
+                const token = await getAccessToken();
 
-              if (!token) {
-                memoError.textContent =
-                  '로그인이 필요합니다.';
-                return;
-              }
+                if (!token) {
+                  throw new Error('로그인이 필요합니다.');
+                }
 
-              const response =
-                await fetch(
+                const deleteResponse = await fetch(
                   `/api/notes/${note.id}`,
                   {
                     method: 'DELETE',
                     headers: {
-                      Authorization:
-                        `Bearer ${token}`
+                      Authorization: `Bearer ${token}`
                     }
                   }
                 );
 
-              if (!response.ok) {
-                memoError.textContent =
-                  `삭제 실패: HTTP ${response.status}`;
-                return;
+                if (!deleteResponse.ok) {
+                  throw new Error(
+                    `삭제 실패: HTTP ${deleteResponse.status}`
+                  );
+                }
+
+                await loadNotes();
+              } catch (error) {
+                memoError.textContent = error.message;
               }
+            });
 
-              await loadNotes();
-            }
-          );
+            item.append(title, content, editButton, deleteButton);
+            return item;
+          })
+        );
 
-          item.append(
-            title,
-            content,
-            editButton,
-            deleteButton
-          );
-
-          return item;
-        })
-      );
-
-      memoPanel.hidden = false;
+        memoPanel.hidden = false;
+      } catch (error) {
+        memoPanel.hidden = true;
+        list.replaceChildren();
+        throw error;
+      }
     }
-
     memoForm.addEventListener(
       'submit',
       async event => {

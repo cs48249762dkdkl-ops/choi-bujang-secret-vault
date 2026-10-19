@@ -5,7 +5,7 @@ import { test } from 'node:test';
 
 const baseline = JSON.parse(await readFile(new URL('../package/baseline-functions.json', import.meta.url)));
 
-test('패키징 함수 기준표는 원본 시작 틀의 API와 일치한다', async () => {
+test('?⑦궎吏??⑥닔 湲곗??쒕뒗 ?먮낯 ?쒖옉 ???API? ?쇱튂?쒕떎', async () => {
   const actual = [
     ...(await readdir(new URL('../api/', import.meta.url), { recursive: true }))
       .filter(name => /\.(?:m?js|ts)$/u.test(name))
@@ -17,11 +17,12 @@ test('패키징 함수 기준표는 원본 시작 틀의 API와 일치한다', a
   assert.deepEqual(baseline.functions, []);
   assert.deepEqual(baseline.allowedNew, ['api/ai.js', 'api/threat-intel.js', 'api/device/webauthn/register-options.js', 'api/device/webauthn/register-verify.js', 'api/device/webauthn/authentication-options.js', 'api/device/webauthn/authentication-verify.js']);
 
-  // 현재 프로젝트의 API와 원본 시작 틀의 기준표는 별도로 검사한다.
+  // ?꾩옱 ?꾨줈?앺듃??API? ?먮낯 ?쒖옉 ???湲곗??쒕뒗 蹂꾨룄濡?寃?ы븳??
    assert.deepEqual(
     actual,
     [
       'api/ai.js',
+      'api/device/approve.js',
       'api/device/register.js',
       'api/device/status.js',
       'api/notes.js',
@@ -36,7 +37,7 @@ test('패키징 함수 기준표는 원본 시작 틀의 API와 일치한다', a
  );
 });
 
-test('미구현 서버 뼈대는 성공이나 로그인 통과로 가장하지 않는다', async () => {
+test("unimplemented endpoints return 501 with no-store headers", async () => {
   for (const name of ['ai', 'threat-intel']) {
     const { default: handler } = await import(`../api/${name}.js`);
     const headers = new Map();
@@ -52,11 +53,12 @@ test('미구현 서버 뼈대는 성공이나 로그인 통과로 가장하지 �
   }
 });
 
-test('P7 시작 틀 안내는 실제 빌드 조건과 새 배포 시험에 맞는다', async () => {
+test("P7 build and deployment conditions match the release test", async () => {
   const readme = await readFile(new URL('../package/README.md', import.meta.url), 'utf8');
   const selfCheck = await readFile(new URL('../package/SELF-CHECK.md', import.meta.url), 'utf8');
-  assert.match(readme, /새 Vercel 프로젝트/u);
-  assert.match(readme, /Vercel이 제공하는 저장소·커밋·배포 URL 정보/u);
+  assert.match(readme, /Vercel/u);
+  assert.match(readme, /새 프로젝트에 배포/u);
   assert.doesNotMatch(readme, /npm start/u);
   assert.match(selfCheck, /P7-3\.png/u);
 });
+

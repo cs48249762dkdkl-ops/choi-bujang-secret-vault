@@ -1,13 +1,15 @@
 {
-  "version": 1,
-  "starter": "ChoiTimo/aleph-defense-starter",
-  "functions": [],
-  "allowedNew": [
-    "api/ai.js",
-    "api/threat-intel.js",
-    "api/device/webauthn/register-options.js",
-    "api/device/webauthn/register-verify.js",
-    "api/device/webauthn/authentication-options.js",
-    "api/device/webauthn/authentication-verify.js"
-  ]
+    "version":  1,
+    "starter":  "ChoiTimo/aleph-defense-starter",
+    "functions":  [
+
+                  ],
+    "allowedNew":  [
+                       "api/ai.js",
+                       "api/threat-intel.js",
+                       "api/device/webauthn/register-options.js",
+                       "api/device/webauthn/register-verify.js",
+                       "api/device/webauthn/authentication-options.js",
+                       "api/device/webauthn/authentication-verify.js"
+                   ]
 }

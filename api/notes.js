@@ -1,4 +1,5 @@
-import { checkDeviceApproval } from '../src/device-approval.mjs';
+﻿import { checkDeviceApproval } from '../src/device-approval.mjs';
+import { verifyDeviceSessionToken } from '../src/device-session.mjs';
 import { randomUUID } from 'node:crypto';
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import { createClient } from '@supabase/supabase-js';
@@ -94,11 +95,52 @@ export default async function handler(request, response) {
     });
   }
 
-  const deviceId = request.headers['x-device-id'];
+  const writeMethods = new Set(['POST', 'PUT', 'DELETE']);
+
+  if (writeMethods.has(request.method)) {
+    const origin = request.headers.origin;
+
+    if (origin !== 'https://choi-bujang-secret-vault-rust.vercel.app') {
+      return response.status(403).json({
+        error: 'CSRF_ORIGIN_REJECTED'
+      });
+    }
+  }
+
+  const cookieHeader = request.headers.cookie || '';
+  const cookieMatch = cookieHeader.match(
+    /(?:^|;\s*)device_session=([^;]+)/
+  );
+
+  if (!cookieMatch) {
+    return response.status(403).json({
+      error: 'DEVICE_SESSION_REQUIRED',
+      deviceProofVerified: false
+    });
+  }
+
+  let deviceSession;
+
+  try {
+    deviceSession = await verifyDeviceSessionToken(cookieMatch[1]);
+  } catch {
+    return response.status(403).json({
+      error: 'DEVICE_SESSION_INVALID',
+      deviceProofVerified: false
+    });
+  }
+
+  if (deviceSession.ownerId !== identity.userId) {
+    return response.status(403).json({
+      error: 'DEVICE_SESSION_USER_MISMATCH',
+      deviceProofVerified: false
+    });
+  }
+
   const approval = await checkDeviceApproval({
     supabase,
     ownerId: identity.userId,
-    deviceId
+    deviceId: deviceSession.deviceId
   });
 
   if (!approval.approved) {
@@ -108,15 +150,6 @@ export default async function handler(request, response) {
       deviceProofVerified: false
     });
   }
-
-  // 실제 기기 소유 증명(WebAuthn 등)이 구현되기 전에는
-  // 승인 기록이나 X-Device-ID만으로 자료 접근을 허용하지 않는다.
-  return response.status(403).json({
-    error: 'DEVICE_PROOF_REQUIRED',
-    approvalStatus: approval.status,
-    deviceProofVerified: false
-  });
-
   if (request.method === 'GET') {
     if (memoId) {
       const { data, error } = await supabase
@@ -149,7 +182,7 @@ export default async function handler(request, response) {
       .from('learning_notes')
       .select('memo_id, title, content')
       .eq('owner_id', identity.userId)
-      .order('id', { ascending: true });
+      .order('memo_id', { ascending: true });
 
     if (error) {
       return response.status(500).json({
@@ -337,3 +370,5 @@ export default async function handler(request, response) {
     error: 'METHOD_NOT_ALLOWED'
   });
 }
+
+
