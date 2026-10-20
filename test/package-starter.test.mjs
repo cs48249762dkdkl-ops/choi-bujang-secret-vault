@@ -28,6 +28,7 @@ test('?⑦궎吏??⑥닔 湲곗??쒕뒗 ?먮낯 ?쒖옉 ???API? ?쇱튂?쒕�
       'api/notes.js',
       'api/notes/[id].js',
       'api/notes/restore.js',
+      'api/operations.js',
       'api/threat-intel.js',
       'api/device/webauthn/register-options.js',
       'api/device/webauthn/register-verify.js',

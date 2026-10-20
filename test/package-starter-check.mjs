@@ -22,11 +22,13 @@ test('패키징 함수 기준표는 원본 시작 틀의 API와 일치한다', a
     actual,
     [
       'api/ai.js',
+      'api/device/approve.js',
       'api/device/register.js',
       'api/device/status.js',
       'api/notes.js',
       'api/notes/[id].js',
       'api/notes/restore.js',
+      'api/operations.js',
       'api/threat-intel.js',
       'api/device/webauthn/register-options.js',
       'api/device/webauthn/register-verify.js',

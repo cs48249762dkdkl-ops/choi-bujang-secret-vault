@@ -126,24 +126,41 @@
     li span {
       color: #bfd0e5;
     }
+
+    .operations-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .operations-grid p {
+      margin: 0;
+      padding: 14px;
+      border: 1px solid #51667c;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+
+    .operations-grid strong {
+      font-size: 16px;
+    }
   </style>
 </head>
 
 <body>
   <main>
-    <div class="eyebrow">BYTE BACK · 1단계 피해 확인</div>
+    <div class="eyebrow">BYTE BACK · 12단계 탈환 작전실</div>
 
-    <h1>점령된 자료실</h1>
+    <h1>나만의 자료실</h1>
 
     <p>
-      지금은 보호 장치가 없는 상태입니다.
+      서버가 로그인과 기기 승인을 확인한 뒤 기존 자료실을 엽니다.
       아래 기록은 모두 실습을 위해 만든 가상 자료입니다.
     </p>
 
     <div class="notice">
-  보호 자료는 서버의 로그인 및 접근 제어를 거쳐야 합니다.
-  현재 실제 기기 소유 증명은 미완성이므로 보호 자료 접근이 차단됩니다.
-  화면의 승인 상태만으로 자료 접근이 허용되지는 않습니다.
+  보호 자료는 서버의 로그인·기기 세션·승인 검사를 거칩니다.
+  설치 표시나 화면의 승인 버튼만으로 자료 접근이 허용되지는 않습니다.
 </div>
 
     <section class="auth" aria-labelledby="app-status-title">
@@ -260,6 +277,21 @@
     <li>가상 메모를 불러오는 중입니다.</li>
   </ul>
 </section>
+
+    <section id="operations-panel" class="auth" aria-labelledby="operations-title" hidden>
+      <h2 id="operations-title">탈환 작전실</h2>
+      <p>서버 응답으로 확인된 상태와 아직 실행하지 않은 시험을 구분합니다. 이 화면에는 메모 본문을 싣지 않습니다.</p>
+      <button id="operations-refresh" type="button">서버 상태 다시 확인</button>
+      <p id="operations-status" role="status">서버 상태를 확인하지 않았습니다.</p>
+      <div class="operations-grid">
+        <p><strong>판정기 규칙</strong><span id="operations-rules">미확인</span></p>
+        <p><strong>탐지 사건</strong><span id="operations-detection">미실행</span></p>
+        <p><strong>회수 상태</strong><span id="operations-revocation">미실행</span></p>
+        <p><strong>복구 버전</strong><span id="operations-restore">미확인</span></p>
+        <p><strong>41종 총공세</strong><span id="operations-assault">운영 결과 미수집</span></p>
+      </div>
+      <p id="operations-evidence">요청 ID와 서버 확인 시각: 미실행</p>
+    </section>
   </main>
 
   <script type="module">
@@ -692,6 +724,24 @@
     const memoPanel =
       document.querySelector('#memo-panel');
 
+    const operationsPanel = document.querySelector('#operations-panel');
+    const operationsStatus = document.querySelector('#operations-status');
+    const operationsEvidence = document.querySelector('#operations-evidence');
+    let operationsLoadRequest = 0;
+
+    function resetOperations() {
+      operationsLoadRequest += 1;
+      operationsPanel.hidden = true;
+      operationsStatus.textContent = '서버 상태를 확인하지 않았습니다.';
+      operationsEvidence.textContent = '요청 ID와 서버 확인 시각: 미실행';
+      for (const id of [
+        'operations-rules', 'operations-detection', 'operations-revocation',
+        'operations-restore', 'operations-assault'
+      ]) {
+        document.getElementById(id).textContent = '미확인';
+      }
+    }
+
     const memoForm =
       document.querySelector('#memo-form');
 
@@ -723,6 +773,7 @@
       const requestNumber = ++notesLoadRequest;
       memoPanel.hidden = true;
       list.replaceChildren();
+      resetOperations();
 
       try {
         if (!deviceKeyStorageCleared) {
@@ -852,12 +903,84 @@
         memoPanel.hidden = false;
         deviceStatus.textContent =
           '서버가 승인된 기기 세션과 자료실 접근을 확인했습니다.';
+        operationsPanel.hidden = false;
+        loadOperations(accessToken).catch(() => {
+          operationsStatus.textContent = '작전실 API 확인 실패. 실행 결과로 보지 않습니다.';
+        });
       } catch (error) {
         memoPanel.hidden = true;
         list.replaceChildren();
+        resetOperations();
         throw error;
       }
     }
+
+    async function loadOperations(accessToken) {
+      const requestNumber = ++operationsLoadRequest;
+      operationsStatus.textContent = '작전실 API 응답을 확인하는 중입니다.';
+      const response = await fetch('/api/operations', {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      if (requestNumber !== operationsLoadRequest || memoPanel.hidden) return;
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          memoPanel.hidden = true;
+          list.replaceChildren();
+          resetOperations();
+        }
+        throw new Error(`작전실 API HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (requestNumber !== operationsLoadRequest || memoPanel.hidden) return;
+
+      if (
+        result.schema !== 'byteback.operations.v1'
+        || result.deviceAccess?.state !== 'approved_verified'
+        || !Array.isArray(result.decision?.ruleIds)
+        || result.decision.ruleCount !== result.decision.ruleIds.length
+        || typeof result.requestId !== 'string'
+        || response.headers.get('x-request-id') !== result.requestId
+      ) {
+        throw new Error('작전실 API 응답 형식 오류');
+      }
+
+      document.querySelector('#operations-rules').textContent =
+        `${result.decision.ruleCount}개 정의 확인 (${result.decision.ruleIds.join(', ')}). 운영 판정 미실행.`;
+      document.querySelector('#operations-detection').textContent =
+        result.detection?.execution === 'not_run'
+          ? '운영 사건 전달 미실행 · 사건 수 미측정'
+          : '운영 사건 결과를 별도로 확인해야 합니다.';
+      document.querySelector('#operations-revocation').textContent =
+        result.revocation?.execution === 'not_run'
+          ? '회수 실행·결과 미확인'
+          : '회수 결과를 별도로 확인해야 합니다.';
+      document.querySelector('#operations-restore').textContent =
+        result.restore?.execution === 'not_run'
+          ? '검증된 복구 버전 없음 · 코드상 복원 차단 · 실제 복원 미실행'
+          : '복구 결과를 별도로 확인해야 합니다.';
+      document.querySelector('#operations-assault').textContent =
+        result.finalAssault?.execution === 'not_run'
+          ? '41종 운영 시험 결과 미수집 · 통과로 표시하지 않음'
+          : '41종 시험 기록을 별도로 확인해야 합니다.';
+      operationsEvidence.textContent =
+        `요청 ID ${result.requestId} · 서버 확인 시각 ${result.checkedAt}`;
+      operationsStatus.textContent = '서버가 승인된 기기 세션을 확인한 응답입니다. 규칙 실행이나 41종 통과 증거는 아닙니다.';
+    }
+
+    document.querySelector('#operations-refresh').addEventListener('click', async () => {
+      const accessToken = await getAccessToken();
+      if (!accessToken || memoPanel.hidden) {
+        resetOperations();
+        return;
+      }
+      loadOperations(accessToken).catch(() => {
+        operationsStatus.textContent = '작전실 API 확인 실패. 실행 결과로 보지 않습니다.';
+      });
+    });
     memoForm.addEventListener(
       'submit',
       async event => {
@@ -933,6 +1056,7 @@
 
         memoPanel.hidden = true;
         list.replaceChildren(document.createElement('li'));
+        resetOperations();
 
         if (!nextSession) {
           notesLoadRequest += 1;
