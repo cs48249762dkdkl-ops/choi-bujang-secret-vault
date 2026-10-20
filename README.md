@@ -4,6 +4,42 @@
 
 현재 단계는 `aleph.config.json`의 12단계입니다. 아래의 1단계 배포 안내는 당시의 기록이며, 현재 설치·실행·중지·복구 방법은 문서 끝의 **12단계 저장점**을 따릅니다. 화면의 성공 문구와 로컬 가상 시험은 운영 심판의 통과 증거가 아닙니다.
 
+## 12단계 재제출 기준 — 출처와 재현 절차
+
+이 절은 **검사한 커밋의 동작을 재현하기 위한 안내**다. 2026-10-20에 검토한 출발 커밋은 `a472d83c7508d4d6501dfcc6dd5b9a7af847e9c0`이다. 아래 두 파일의 보완 내용까지 확인하려면 `codespace-recovery`의 최신 커밋을 받은 뒤 `git rev-parse HEAD`의 **전체 SHA**를 기록하고 그 커밋으로 시험한다. 서로 다른 커밋의 응답을 한 제출 기록으로 합치지 않는다.
+
+### 코드의 출처
+
+| 출처 | 구성 요소와 역할 |
+|---|---|
+| **학생 직접 제작** | `src/decider.mjs` 판정기 규칙(`device_registered`, `step_up_required`, `resource_zone`), `src/detect.mjs` 탐지·회수 **제안** 규칙 |
+| **학생 직접 제작** | `public/index.html` 접속 앱·작전실, `api/device/*` 기기 인증, `api/notes.js` 보호 자료실, `api/operations.js` 가린 상태 API |
+| **과제 제공: ALEPH SDP 엔진** | 신원·기기 확인과 판정 요청 전달, 엔진 측 회수 집행, 41종 공격 평가의 제공 주체. 학생이 구현한 코드가 아니며 학생 화면의 통과 표시와 구분됨 |
+| **외부 서비스** | Supabase는 인증·자료 저장, Vercel은 서버 실행·배포를 담당하며 ALEPH SDP 엔진을 대신하지 않음 |
+
+### 재현 순서: 설치 → 실행 → 중지 → 복구
+
+1. **설치(검사할 커밋 고정):** 새 폴더에서 아래 명령을 실행하고 `git rev-parse HEAD`의 값을 점검 기록에 보존한다. 같은 결과를 다시 얻으려면 해당 전체 SHA로 `git checkout --detach <기록한-SHA>` 한 뒤 설치한다.
+
+   ```powershell
+   git clone --branch codespace-recovery https://github.com/cs48249762dkdkl-ops/choi-bujang-secret-vault.git
+   cd choi-bujang-secret-vault
+   git rev-parse HEAD
+   npm.cmd install
+   ```
+
+2. **실행·검사:** `npm.cmd run build -- --local`, `node --test test/*.test.mjs`, `npm.cmd run test:webauthn`, `npm.cmd run decider:test`, `npm.cmd run detect:test`로 로컬 코드를 검사한다. 빌드가 성공해도 실제 승인 기기의 API 동작이나 ALEPH SDP 엔진의 41종 결과를 입증하는 것은 아니다. 서버를 로컬에서 시험할 때만 본인 Vercel 프로젝트에 연결해 `npx vercel dev`를 실행한다. Production 환경변수는 Vercel 비밀 설정으로만 관리하고, 실제 값을 터미널 출력·README·Git·제출 묶음에 넣지 않는다.
+
+3. **중지:** 실행 중인 `npx vercel dev` 터미널에서 `Ctrl+C`를 누른다. 운영 서버는 Vercel Deployments에서 필요한 경우 해당 배포의 상태와 롤백 대상을 검토한다. 데이터베이스·운영 기록은 삭제하지 않는다.
+
+4. **복구:** 먼저 `git status --short`와 `git diff`로 로컬 변경을 확인한다. 코드 복귀가 필요하면 위에서 기록한 정상 동작 커밋과 현재 커밋을 `git diff <정상-SHA> HEAD -- src/attack-check.mjs README.md`로 대조하고, 보존해야 할 작업을 확인한 뒤 선택한 파일 또는 해당 커밋만 안전하게 되돌린다. `git reset --hard`와 `git clean`을 사용하지 않는다. 검증된 침해 전 백업이 없으므로 정책·메모의 실제 복원은 **미실행**으로 유지하고 `/api/notes/restore`의 차단 상태를 해제하지 않는다.
+
+### 12단계 제출 기록의 상태 해석
+
+`src/attack-check.mjs`의 정적 메모와 메모 API 점검은 **심판 기록에 연결된 요청 ID가 없다**. 따라서 12단계의 `attackAttempts[].observed`는 두 항목 모두 정확히 `not_run`이다. 이전에 별도로 `curl`로 측정한 HTTP 404·401은 참고 가능한 독립 관찰값이지만 **이 제출의 심판 연동 점검 결과가 아니며**, `observed`에 복사하지 않는다. 1~11단계의 미실행 시험과 엔진의 41종 결과도 성공 수로 간주하지 않는다.
+
+작업 폴더가 깨끗한 상태에서 `npm.cmd run bundle`을 실행해 `artifacts/submission.json`을 재생성하고 `attackAttempts[].observed` 값이 `not_run`인지 검사한다. 제출 화면에는 학생 제작물과 **ALEPH SDP 엔진**의 출처를 분리해 적는다. 비밀키·토큰·메모 본문을 기록하지 않는다.
+
 ## 학생이 하는 일: 세 걸음
 
 1. GitHub 계정을 만듭니다.
