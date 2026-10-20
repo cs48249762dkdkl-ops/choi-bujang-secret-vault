@@ -28,7 +28,7 @@
    npm.cmd install
    ```
 
-2. **실행·검사:** `npm.cmd run build -- --local`, `node --test test/*.test.mjs`, `npm.cmd run test:webauthn`, `npm.cmd run decider:test`, `npm.cmd run detect:test`로 로컬 코드를 검사한다. 저장점으로 커밋한 뒤, 작업 폴더가 깨끗한 상태에서 `npm.cmd run bundle`을 실행한다. 이 실행은 비로그인 `GET /data.json`과 `GET /api/notes`를 각각 한 번 보내며, 각 HTTP 응답 상태만 해당 `attackAttempts[].observed`에 `HTTP <상태>`로 적는다. 응답 상태를 받지 못한 항목만 `not_run`이다. 빌드·묶음 생성 성공은 실제 승인 기기의 API 동작이나 ALEPH SDP 엔진의 41종 결과를 입증하지 않는다. 서버를 로컬에서 시험할 때만 본인 Vercel 프로젝트에 연결해 `npx vercel dev`를 실행한다. Production 환경변수는 Vercel 비밀 설정으로만 관리하고, 실제 값을 터미널 출력·README·Git·제출 묶음에 넣지 않는다.
+2. **실행·검사:** `npm.cmd run build -- --local`, `node --test test/*.test.mjs`, `npm.cmd run test:webauthn`, `npm.cmd run decider:test`, `npm.cmd run detect:test`로 로컬 코드를 검사한다. 저장점으로 커밋한 뒤, 작업 폴더가 깨끗한 상태에서 `npm.cmd run bundle`을 실행한다. 현재 12단계 두 사례의 요청은 심판 기록에서 확인되지 않았으므로 묶음의 `observed`는 각각 `not_run`이다. 빌드·묶음 생성 성공은 실제 승인 기기의 API 동작이나 ALEPH SDP 엔진의 41종 결과를 입증하지 않는다. 서버를 로컬에서 시험할 때만 본인 Vercel 프로젝트에 연결해 `npx vercel dev`를 실행한다. Production 환경변수는 Vercel 비밀 설정으로만 관리하고, 실제 값을 터미널 출력·README·Git·제출 묶음에 넣지 않는다.
 
 3. **중지:** 실행 중인 `npx vercel dev` 터미널에서 `Ctrl+C`를 누른다. 운영 서버는 Vercel Deployments에서 필요한 경우 해당 배포의 상태와 롤백 대상을 검토한다. 데이터베이스·운영 기록은 삭제하지 않는다.
 
@@ -36,9 +36,9 @@
 
 ### 12단계 제출 기록의 상태 해석
 
-`npm.cmd run bundle`은 12단계의 정적 메모와 메모 API 사례를 실제로 실행해 그 실행에서 받은 HTTP 상태만 `attackAttempts[].observed`에 적는다. 예를 들어 `HTTP 404`, `HTTP 401`처럼 상태만 기록하며, 응답 본문·요청 ID·이전 실행의 결과는 기록하지 않는다. 요청을 보내지 않았거나 HTTP 응답을 받지 못한 사례만 정확히 `not_run`으로 남긴다. 1~11단계의 미실행 시험과 ALEPH SDP 엔진의 41종 결과도 성공 수로 간주하지 않는다.
+심판 기록에 `anonymous_static_note_read`와 `anonymous_notes_api_read`의 요청이 확인되지 않았다. 따라서 이번 12단계 제출의 두 `attackAttempts[].observed`는 `not_run`이다. 별도로 확인한 배포 주소의 HTTP 404·401은 이 사례들의 심판 요청·응답이 아니므로 제출 결과에 옮기지 않는다. 이후 심판 사례와 실제 요청이 연결되면 그 사례의 실제 HTTP 상태만 기록한다. 1~11단계의 미실행 시험과 ALEPH SDP 엔진의 41종 결과도 성공 수로 간주하지 않는다.
 
-작업 폴더가 깨끗한 상태에서 `npm.cmd run bundle`을 실행해 `artifacts/submission.json`을 재생성하고 `attackAttempts[].observed`가 실제 응답은 `HTTP <상태>`, 미실행은 `not_run`인지 검사한다. 제출 화면에는 학생 제작물과 **ALEPH SDP 엔진**의 출처를 분리해 적는다. 비밀키·토큰·메모 본문을 기록하지 않는다.
+작업 폴더가 깨끗한 상태에서 `npm.cmd run bundle`을 실행해 `artifacts/submission.json`을 재생성하고 두 `attackAttempts[].observed`가 `not_run`인지 검사한다. 제출 화면에는 학생 제작물과 **ALEPH SDP 엔진**의 출처를 분리해 적는다. 비밀키·토큰·메모 본문을 기록하지 않는다.
 
 ## 학생이 하는 일: 세 걸음
 

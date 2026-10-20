@@ -62,24 +62,20 @@ test('attack checks detect anonymous access to static data and notes API', async
   }
 });
 
-test('stage 12 records only each invocation HTTP status and leaves missing responses not_run', async () => {
+test('stage 12 leaves judge-unlinked cases not_run without issuing local probes', async () => {
   const originalFetch = globalThis.fetch;
   const requests = [];
 
   try {
     globalThis.fetch = async url => {
       requests.push(String(url));
-      if (String(url).endsWith('/data.json')) throw new Error('no response');
-      return new Response('', { status: 401 });
+      return new Response('', { status: 200 });
     };
 
     const results = await runAttackChecks({ ...config, step: 12 });
 
-    assert.deepEqual(requests, [
-      'https://student-defense.vercel.app/data.json',
-      'https://student-defense.vercel.app/api/notes',
-    ]);
-    assert.deepEqual(results.map(result => result.observed), ['not_run', 'HTTP 401']);
+    assert.deepEqual(requests, []);
+    assert.deepEqual(results.map(result => result.observed), ['not_run', 'not_run']);
   } finally {
     globalThis.fetch = originalFetch;
   }

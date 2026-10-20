@@ -24,6 +24,23 @@ export async function runAttackChecks(config) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
 
+  // These stage-12 case IDs have no matching request in the judge's record.
+  // Independent local GET probes cannot establish an observed result for them.
+  if (config.step >= 12) {
+    return [
+      {
+        attackId: 'anonymous_static_note_read',
+        expected: '비로그인 요청으로 공개 data.json의 가상 메모리를 읽을 수 없어야 함',
+        observed: 'not_run',
+      },
+      {
+        attackId: 'anonymous_notes_api_read',
+        expected: '비로그인 요청의 /api/notes 접근이 인증 오류로 거부되어야 함',
+        observed: 'not_run',
+      },
+    ];
+  }
+
   const check = async (attackId, expected, path) => {
     try {
       const response = await fetch(new URL(path, app), {
