@@ -82,10 +82,25 @@ test('승인 기기 응답과 가린 서버 기록의 수치가 일치한다', a
   assert.doesNotMatch(JSON.stringify(res.body) + JSON.stringify(lines), /memoBody|noteBody|access_token|secret_key/u);
 });
 
-test('작전실 화면은 승인된 자료실 뒤에만 나타난다', async () => {
-  const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
-  assert.match(page, /<section id="operations-panel"[^>]* hidden>/u);
-  assert.ok(page.indexOf('memoPanel.hidden = false;') < page.indexOf('operationsPanel.hidden = false;'));
+test('작전실 기본 화면은 공개하되 보호 자료는 인증 후 표시한다', async () => {
+  const page = await readFile(
+    new URL('../public/index.html', import.meta.url),
+    'utf8'
+  );
+
+  // 작전실 기본 화면은 표시
+  assert.match(
+    page,
+    /<section id="operations-panel"[^>]*aria-labelledby="operations-title">/u
+  );
+
+  // 보호 메모는 기본적으로 숨김
+  assert.match(page, /<section id="memo-panel" hidden>/u);
+
+  // 실제 상태는 서버 API에서 조회
   assert.match(page, /fetch\('\/api\/operations',\s*\{/u);
+
+  // 미실행 결과를 성공으로 표시하지 않음
   assert.match(page, /41종 운영 시험 결과 미수집/u);
+  assert.match(page, /id="operations-test-results"/u);
 });

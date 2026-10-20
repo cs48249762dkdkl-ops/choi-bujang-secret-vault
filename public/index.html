@@ -278,7 +278,7 @@
   </ul>
 </section>
 
-    <section id="operations-panel" class="auth" aria-labelledby="operations-title" hidden>
+    <section id="operations-panel" class="auth" aria-labelledby="operations-title">
       <h2 id="operations-title">탈환 작전실</h2>
       <p>서버 응답으로 확인된 상태와 아직 실행하지 않은 시험을 구분합니다. 이 화면에는 메모 본문을 싣지 않습니다.</p>
       <button id="operations-refresh" type="button">서버 상태 다시 확인</button>
@@ -291,6 +291,41 @@
         <p><strong>41종 총공세</strong><span id="operations-assault">운영 결과 미수집</span></p>
       </div>
       <p id="operations-evidence">요청 ID와 서버 확인 시각: 미실행</p>
+          <h3>1~11단계 보안 시험 실측 기록</h3>
+      <p>
+        실제 API 요청으로 확인된 결과만 기록합니다.
+        미실행 시험은 통과로 계산하지 않습니다.
+      </p>
+
+      <div style="overflow-x: auto;">
+        <table id="operations-test-table"
+               style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th scope="col">단계</th>
+              <th scope="col">요청 유형</th>
+              <th scope="col">기대 결과</th>
+              <th scope="col">실제 API 결과</th>
+              <th scope="col">요청 ID</th>
+              <th scope="col">확인 시각</th>
+            </tr>
+          </thead>
+          <tbody id="operations-test-results">
+            <tr>
+              <td>1~11</td>
+              <td>정상·금지 요청</td>
+              <td>허용·거부</td>
+              <td>미실행</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p id="operations-test-summary" role="status">
+        실측 결과 미수집 · 통과 0건 확인
+      </p>
     </section>
   </main>
 
@@ -731,8 +766,8 @@
 
     function resetOperations() {
       operationsLoadRequest += 1;
-      operationsPanel.hidden = true;
-      operationsStatus.textContent = '서버 상태를 확인하지 않았습니다.';
+      operationsPanel.hidden = false;operationsStatus.textContent =
+  '서버 확인 대기 · 로그인 및 승인된 기기 인증이 필요합니다. 보호 자료는 표시하지 않습니다.';
       operationsEvidence.textContent = '요청 ID와 서버 확인 시각: 미실행';
       for (const id of [
         'operations-rules', 'operations-detection', 'operations-revocation',
