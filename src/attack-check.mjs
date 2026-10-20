@@ -24,63 +24,33 @@ export async function runAttackChecks(config) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
 
-  // Stage 12: the two local network probes were not linked to a judge-recorded request.
-  // Report them as not_run rather than reusing unrelated HTTP observations.
-  // Keep the older step-3 smoke-test behavior below for its existing contract tests.
-  if (config.step >= 12) {
-    return [
-      {
-        attackId: 'anonymous_static_note_read',
-        expected: '비로그인 요청으로 공개 data.json의 가상 메모리를 읽을 수 없어야 함',
-        observed: 'not_run',
-      },
-      {
-        attackId: 'anonymous_notes_api_read',
-        expected: '비로그인 요청의 /api/notes 접근이 인증 오류로 거부되어야 함',
-        observed: 'not_run',
-      },
-    ];
-  }
+  const check = async (attackId, expected, path) => {
+    try {
+      const response = await fetch(new URL(path, app), {
+        redirect: 'follow',
+        signal: AbortSignal.timeout(10000),
+      });
 
-  const checks = [];
+      // A bundle records only the status returned by this invocation.
+      // Do not copy response bodies, request IDs, or an earlier probe's result.
+      return { attackId, expected, observed: `HTTP ${response.status}` };
+    } catch {
+      // No HTTP status was observed for this invocation, so it is not evidence of a run.
+      return { attackId, expected, observed: 'not_run' };
+    }
+  };
 
-  const publicDataResponse = await fetch(new URL('/data.json', app), {
-    redirect: 'follow',
-    signal: AbortSignal.timeout(10000),
-  });
-
-  checks.push({
-    attackId: 'anonymous_static_note_read',
-    expected: '비로그인 요청으로 공개 data.json의 가상 메모리를 읽을 수 없어야 함',
-    observed: publicDataResponse.status === 404
-      ? '비로그인 요청에서 공개 data.json이 제공되지 않음 (HTTP 404)'
-      : `data.json이 예상과 다른 응답을 반환함 (HTTP ${publicDataResponse.status})`,
-  });
-
-  const apiResponse = await fetch(new URL('/api/notes', app), {
-    redirect: 'follow',
-    signal: AbortSignal.timeout(10000),
-  });
-
-  let apiData = null;
-
-  try {
-    apiData = await apiResponse.json();
-  } catch {
-    apiData = null;
-  }
-
-  const apiBlocked =
-    (apiResponse.status === 401 || apiResponse.status === 403) &&
-    apiData?.error === 'LOGIN_REQUIRED';
-
-  checks.push({
-    attackId: 'anonymous_notes_api_read',
-    expected: '비로그인 요청의 /api/notes 접근이 인증 오류로 거부되어야 함',
-    observed: apiBlocked
-      ? `비로그인 요청이 인증 오류로 거부됨 (HTTP ${apiResponse.status})`
-      : `비로그인 요청이 예상된 인증 오류로 거부되지 않음 (HTTP ${apiResponse.status})`,
-  });
-
-  return checks;
+  // Keep the two requests independent: a missing response for one must not skip the other.
+  return [
+    await check(
+      'anonymous_static_note_read',
+      '비로그인 요청으로 공개 data.json의 가상 메모리를 읽을 수 없어야 함',
+      '/data.json',
+    ),
+    await check(
+      'anonymous_notes_api_read',
+      '비로그인 요청의 /api/notes 접근이 인증 오류로 거부되어야 함',
+      '/api/notes',
+    ),
+  ];
 }
