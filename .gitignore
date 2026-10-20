@@ -8,3 +8,5 @@ public/aleph.json
 *.bak
 *.backup
 *.tmp
+.vercel
+.env*

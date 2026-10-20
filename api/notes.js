@@ -77,9 +77,20 @@ export default async function handler(request, response) {
     parts[1] === 'notes' &&
     parts[2].length > 0;
 
-  const memoId = isNoteItem ? parts[2] : null;
+    const rewrittenId = new URL(
+    request.url,
+    `https://${request.headers.host}`
+  ).searchParams.get('noteId');
 
-  if (!isNotesCollection && !isNoteItem) {
+    const memoId = isNoteItem
+    ? parts[2]
+    : isNotesCollection
+      ? rewrittenId
+      : null;
+  const isRewrittenNoteItem =
+    isNotesCollection && rewrittenId !== null;
+
+  if (!isNotesCollection && !isNoteItem && !isRewrittenNoteItem) {
     return response.status(404).json({
       error: 'RESOURCE_NOT_FOUND'
     });

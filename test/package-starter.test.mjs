@@ -26,7 +26,6 @@ test('?⑦궎吏??⑥닔 湲곗??쒕뒗 ?먮낯 ?쒖옉 ???API? ?쇱튂?쒕�
       'api/device/register.js',
       'api/device/status.js',
       'api/notes.js',
-      'api/notes/[id].js',
       'api/notes/restore.js',
       'api/operations.js',
       'api/threat-intel.js',
