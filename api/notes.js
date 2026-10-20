@@ -1,5 +1,4 @@
-﻿import { checkDeviceApproval } from '../src/device-approval.mjs';
-import { verifyDeviceSessionToken } from '../src/device-session.mjs';
+﻿import { checkDeviceAccess } from '../src/device-access.mjs';
 import { randomUUID } from 'node:crypto';
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import { createClient } from '@supabase/supabase-js';
@@ -107,46 +106,18 @@ export default async function handler(request, response) {
     }
   }
 
-  const cookieHeader = request.headers.cookie || '';
-  const cookieMatch = cookieHeader.match(
-    /(?:^|;\s*)device_session=([^;]+)/
-  );
-
-  if (!cookieMatch) {
-    return response.status(403).json({
-      error: 'DEVICE_SESSION_REQUIRED',
-      deviceProofVerified: false
-    });
-  }
-
-  let deviceSession;
-
-  try {
-    deviceSession = await verifyDeviceSessionToken(cookieMatch[1]);
-  } catch {
-    return response.status(403).json({
-      error: 'DEVICE_SESSION_INVALID',
-      deviceProofVerified: false
-    });
-  }
-
-  if (deviceSession.ownerId !== identity.userId) {
-    return response.status(403).json({
-      error: 'DEVICE_SESSION_USER_MISMATCH',
-      deviceProofVerified: false
-    });
-  }
-
-  const approval = await checkDeviceApproval({
+  const access = await checkDeviceAccess({
+    cookieHeader: request.headers.cookie,
     supabase,
-    ownerId: identity.userId,
-    deviceId: deviceSession.deviceId
+    ownerId: identity.userId
   });
 
-  if (!approval.approved) {
+  if (!access.allowed) {
     return response.status(403).json({
-      error: 'DEVICE_APPROVAL_REQUIRED',
-      approvalStatus: approval.status,
+      error: access.error,
+      ...(access.approvalStatus && {
+        approvalStatus: access.approvalStatus
+      }),
       deviceProofVerified: false
     });
   }

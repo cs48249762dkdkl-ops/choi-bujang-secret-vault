@@ -1,4 +1,5 @@
 import { createDeviceApiContext } from '../../src/device-api.mjs';
+import { checkDeviceAccess } from '../../src/device-access.mjs';
 
 const DEVICE_ID = /^[0-9a-f]{16}$/u;
 
@@ -25,7 +26,31 @@ export default async function handler(request, response) {
     `https://${request.headers.host}`
   ).searchParams.get('deviceId');
 
-  if (!deviceId || !DEVICE_ID.test(deviceId)) {
+  if (!deviceId) {
+    const access = await checkDeviceAccess({
+      cookieHeader: request.headers.cookie,
+      ownerId: context.identity.userId,
+      supabase: context.supabase
+    });
+
+    if (!access.allowed) {
+      return response.status(403).json({
+        error: access.error,
+        ...(access.approvalStatus && {
+          approvalStatus: access.approvalStatus
+        }),
+        deviceProofVerified: false
+      });
+    }
+
+    return response.status(200).json({
+      registered: true,
+      approvalStatus: 'approved',
+      deviceProofVerified: true
+    });
+  }
+
+  if (!DEVICE_ID.test(deviceId)) {
     return response.status(400).json({
       error: 'INVALID_DEVICE_ID'
     });
