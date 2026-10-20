@@ -259,6 +259,6 @@ git diff --check
 
 ## 13단계 저장점 — CHRONEX 로그인 사용자·기기·세션 표시
 
-4차 시작 틀 0.2.14를 `on-client/`에 추가했다. 이전 1~12단계 코드와 `aleph.config.json`의 12단계 설정은 보존했다. `on-client/student/extension.mjs`의 `renderIdentity`는 전달받은 `me`·`devices`·`sessions`의 불러오는 중·정상 응답·오류를 구분하고, 사용자·기기·세션의 ID·이름·상태를 새 DOM으로 표시한다. 예제 자료·연결 없음·확인 불가 모드를 표시하며, 오류 시 이전 사용자 값을 남기지 않는다. 다른 학생 함수와 제공 UI는 시작 틀 그대로다.
+4차 시작 틀 0.2.14를 `on-client/`에 추가했다. 이전 1~12단계 코드와 `aleph.config.json`의 12단계 설정은 보존했다. `on-client/student/extension.mjs`의 `renderIdentity`는 전달받은 `me`·`devices`·`sessions`의 불러오는 중·정상 응답·오류를 구분하고, 사용자·기기·세션의 ID·이름·상태를 새 DOM으로 표시한다. 현재 기기·세션과 두 목록에는 한국어 상태 설명 옆에 전달받은 원래 status 코드(`noncompliant`, `expired`, `revoked` 등)를 함께 표시한다. 예제 자료·연결 없음·확인 불가 모드를 표시하며, 오류 시 이전 사용자 값을 남기지 않는다. 다른 학생 함수와 제공 UI는 시작 틀 그대로다.
 
 앱 폴더에서 Node.js 24.19.0으로 `node --check student/extension.mjs`를 실행해 문법을 확인하고, `node src/server.mjs`로 로컬 앱을 켠 뒤 `http://127.0.0.1:5189/`의 보호 현황을 연다. 다시 불러오기로 현재 응답을 확인하고, 실행한 터미널에서 `Ctrl+C`로 중지한다. 기본 실행은 기존 서버·에이전트에 연결되지 않으므로 **연결 없음은 성공한 로그인이나 실제 신원 확인이 아니다**. 상태별 모의 입력 검사는 통과했지만 실제 계정·기기·세션 값과 13단계 공식 판정은 미확인이다.

@@ -48,15 +48,15 @@ export function createStudentView() {
 
       section('현재 계정·기기·세션', me, (block, data) => {
         line(block, `사용자: ${data?.user?.label ?? '확인 불가'} · ID: ${data?.user?.id ?? '확인 불가'}`);
-        line(block, `현재 기기: ${data?.device?.label ?? '확인 불가'} · ID: ${data?.device?.id ?? '확인 불가'} · ${deviceStatus[data?.device?.status] ?? '확인 불가'}`);
-        line(block, `로그인 세션: ID: ${data?.session?.id ?? '확인 불가'} · ${sessionStatus[data?.session?.status] ?? '확인 불가'}`);
+        line(block, `현재 기기: ${data?.device?.label ?? '확인 불가'} · ID: ${data?.device?.id ?? '확인 불가'} · 상태: ${deviceStatus[data?.device?.status] ?? '확인 불가'} (${data?.device?.status ?? '확인 불가'})`);
+        line(block, `로그인 세션: ID: ${data?.session?.id ?? '확인 불가'} · 상태: ${sessionStatus[data?.session?.status] ?? '확인 불가'} (${data?.session?.status ?? '확인 불가'})`);
       });
       section('내 기기 목록', devices, (block, data) => {
         if (!Array.isArray(data) || data.length === 0) return line(block, '표시할 기기가 없습니다.');
         const list = document.createElement('ul');
         for (const device of data) {
           const item = document.createElement('li');
-          item.textContent = `${device.label ?? '확인 불가'} · ID: ${device.id ?? '확인 불가'} · ${deviceStatus[device.status] ?? '확인 불가'}`;
+          item.textContent = `${device.label ?? '확인 불가'} · ID: ${device.id ?? '확인 불가'} · 상태: ${deviceStatus[device.status] ?? '확인 불가'} (${device.status ?? '확인 불가'})`;
           list.append(item);
         }
         block.append(list);
@@ -66,7 +66,7 @@ export function createStudentView() {
         const list = document.createElement('ul');
         for (const session of data) {
           const item = document.createElement('li');
-          item.textContent = `ID: ${session.id ?? '확인 불가'} · ${sessionStatus[session.status] ?? '확인 불가'}`;
+          item.textContent = `ID: ${session.id ?? '확인 불가'} · 상태: ${sessionStatus[session.status] ?? '확인 불가'} (${session.status ?? '확인 불가'})`;
           list.append(item);
         }
         block.append(list);
