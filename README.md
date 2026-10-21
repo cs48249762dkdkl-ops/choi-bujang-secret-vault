@@ -315,3 +315,10 @@ git diff --check
 - `patterns.json`은 [Apache Log4j CVE-2021-44228](https://logging.apache.org/security.html)과 [MITRE ATT&CK T1190](https://attack.mitre.org/techniques/T1190/)을 근거로 완전한 원격 JNDI 조회 구문, 명시적인 점검 도구 식별자, 미확인 경보를 구분한다. `decide.mjs`는 같은 패턴 상수를 파일 맨 위에 두고 다른 파일·패키지·네트워크 없이 계산한다. 실제 요청 필드의 완전한 구문과 높은 수준의 T1190 경보가 함께 있을 때만 차단 후보로 삼는다.
 - `respond.mjs`는 다시 확인된 차단 후보에만 5분 만료와 근거 경보 번호를 담은 출발 주소 거부 규칙을 만든다. 알림·차단의 최소 메타데이터만 Git에서 제외된 `xdr/alerts.log`에 기록한다. 기존 `src/decider.mjs`와 규칙은 변경하지 않는다.
 - 다시 확인: `node --test test/known-cve.test.mjs test/xdr-run.test.mjs`, 이어서 `node scripts/xdr-run.mjs known-cve`를 실행한다(`npm run xdr:run -- known-cve`와 동일). 가상 경보 결과는 `block` 8건, `alert` 8건, `record` 8건이며 정상 이벤트 차단은 0건이다. 격리 단일 파일 시험과 로컬 실행기 검사는 운영 차단이나 심판 판정의 증거가 아니다.
+
+## 보너스 xdr-04 저장점 — 재부팅 후에도 남는 서비스·예약 작업
+
+- 저장소의 네 번째 경보 묶음인 `persistence`를 대상으로 한다. `xdr/persistence/read-alerts.mjs`는 원본을 바꾸지 않고 경보 24건에서 시각·출발 주소·계정·규칙 수준·설명만 24줄로 추리며 비밀값 형태를 가린다.
+- `patterns.json`은 [MITRE ATT&CK T1543](https://attack.mitre.org/techniques/T1543/)과 [T1053](https://attack.mitre.org/techniques/T1053/)을 근거로 서명 없는 서비스 변경, 낯선 예약 작업, 시작 항목과 예약 작업의 결합, 미확인 변경을 구분한다. `decide.mjs`는 같은 패턴 상수를 맨 위에 두고 다른 파일·패키지·네트워크 없이 경보 한 건을 판단한다.
+- `respond.mjs`는 다시 확인된 명확한 차단 후보에만 5분 만료와 근거 경보 번호를 붙인 주소·계정 결합 거부 규칙을 만든다. 실제 서비스·예약 작업을 삭제하지 않으며 기존 `src/decider.mjs` 규칙도 바꾸지 않는다. 알림·차단의 최소 메타데이터만 Git에서 제외된 `xdr/alerts.log`에 기록한다.
+- 다시 확인: `node --test test/persistence.test.mjs test/xdr-run.test.mjs`, 이어서 `node scripts/xdr-run.mjs persistence`를 실행한다(`npm run xdr:run -- persistence`와 동일). 가상 경보 결과는 `block` 8건, `alert` 8건, `record` 8건이며 정상 이벤트 차단은 0건이다. 이 로컬 결과는 운영 차단이나 공식 심판 판정의 증거가 아니다.

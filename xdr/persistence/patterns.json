@@ -1,0 +1,26 @@
+{
+  "schema": "aleph.xdr.persistence-patterns.v1",
+  "source": "MITRE ATT&CK T1543; MITRE ATT&CK T1053",
+  "patterns": [
+    {
+      "name": "unsigned_service_persistence",
+      "conditions": "새 서비스 등록 또는 실행 파일 변경이 서명 없음과 임시 경로, 반복 등록 또는 부팅 후 잔존 같은 추가 신호와 함께 확인된다.",
+      "rationale": "MITRE ATT&CK T1543: 공격자는 서비스를 만들거나 수정해 재부팅 뒤에도 코드를 반복 실행할 수 있다."
+    },
+    {
+      "name": "unusual_scheduled_task",
+      "conditions": "새 예약 작업이 임시 경로의 실행 파일을 가리키고 낯선 이름이나 평소와 다른 실행 시각이 확인된다.",
+      "rationale": "MITRE ATT&CK T1053: 예약 작업을 이용해 비정상 프로그램을 주기적으로 실행하는 것은 지속성 신호다."
+    },
+    {
+      "name": "unlisted_startup_entry",
+      "conditions": "평소 목록에 없는 시작 항목이 새로 추가되거나 시작 항목과 예약 작업이 같은 임시 파일을 가리킨다.",
+      "rationale": "MITRE ATT&CK T1543·T1053: 자동 시작 항목과 예약 실행의 결합은 재실행을 위한 지속성 근거다."
+    },
+    {
+      "name": "unconfirmed_persistence_change",
+      "conditions": "T1543 또는 T1053 경보 수준이 5 이상이지만 악성 실행 파일과 재실행 조건이 함께 확인되지 않는다.",
+      "rationale": "MITRE ATT&CK T1543·T1053: 서비스나 예약 작업의 단일 변경은 정상 관리 활동일 수 있어 알림으로 조사한다."
+    }
+  ]
+}
