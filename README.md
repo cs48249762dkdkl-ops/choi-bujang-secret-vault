@@ -280,3 +280,9 @@ git diff --check
 `on-client/student/extension.mjs`의 `renderStatus`는 전달받은 본인 기기·현재 세션의 불러오는 중·빈 목록·오류와 알림을 구분한다. 오류 시 사용자가 위쪽 **다시 불러오기**를 직접 누르도록 안내하며 자동 재요청하지 않는다. 제공 화면이 전달한 진단 결과에서는 `requestId`, `component`, `version`, `checkedAt`, `engine.mode`, `engine.code`만 표시하고, 학생 상태 칸의 **도움정보 복사**를 눌렀을 때만 이 여섯 항목을 복사한다. 현재 세션은 검증된 연결 한 개이며 과거 세션 전체 목록이 아니다. 15단계 `renderEvents` 상세에는 입력된 미지원 조치에 한해 비활성 `<action> 미지원` 버튼과 미집행 안내를 더했다. 실제 목록의 `supportedActions`가 비어 있으면 버튼이 없고, 조치 요청을 전송하지 않는다. 앞 단계의 다른 함수와 제공 서버·화면·인증 설정은 변경하지 않았다.
 
 다시 확인하려면 `on-client/`에서 Node.js 24.19.0으로 `node --check student/extension.mjs`를 실행하고, `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1`로 앱을 켠다. `http://127.0.0.1:5189/`의 **보호 현황**에서 **도움정보 불러오기** 후 학생 상태 칸의 **도움정보 복사**를 직접 누르고 복사 내용에 비밀값이 없는지 확인한다. 오류 뒤 **다시 불러오기** 성공 시 이전 오류가 사라지는지 확인하고, 실행 터미널에서 `Ctrl+C`로 중지한다. 문법·모의 데이터 검사는 통과했지만 실제 계정 화면·클립보드 확인과 16단계 공식 판정은 아직 확인하지 않았다.
+
+## 17단계 저장점 — CHRONEX 앱 내부 AI 연결 표시
+
+`on-client/student/extension.mjs`의 `renderAiConnection`은 제공 화면이 전달한 AI 연결 점검의 전·진행 중·성공·실패를 구분한다. `test`는 시험 연결 점검, `verified`는 그 시각의 앱 권한 및 모델 응답 점검으로 표시하며, 둘 다 사건 설명 성공으로 취급하지 않는다. 안전한 오류 코드와 메시지에 따라 권한 준비·인증·접근 제한·사용량·이용 시간·요청 제한·시간 초과·네트워크·취소·모델 없음의 안내를 구분한다. `renderExplanation`은 별도로 요청한 사건 설명의 기본 성공 표식과 요약 또는 실패 및 기록 보존 문구만 표시한다. 재점검·계정 변경 때 제공 화면의 새 입력으로 이전 결과를 교체하며 학생 함수는 자동 재요청하지 않는다. 앞 단계 함수와 제공 서버·화면·인증 설정은 변경하지 않았다.
+
+다시 확인하려면 `on-client/`에서 Node.js 24.19.0으로 `node --check student/extension.mjs`를 실행하고, `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1`로 앱을 켠다. `http://127.0.0.1:5189/`에서 사용자가 직접 계정 연결 확인 후 AI 연결 승인과 **현재 API 연결 점검**을 진행한다. 모델 응답 점검만으로 보안 기록의 사건 설명이 실행됐다고 표시하지 않는지 확인하고, 완료 후 실행 터미널에서 `Ctrl+C`로 중지한다. Workbench 수업용 AI, 앱 안의 AI 설명, ALEPH 공식 과제 판정은 별개다. 문법·모의 데이터 검사는 통과했지만 실제 계정 승인·AI 요청·사건 설명 실행과 17단계 공식 판정은 미실행·미확인이다. 열쇠나 토큰은 문서·코드·커밋에 넣지 않는다.
