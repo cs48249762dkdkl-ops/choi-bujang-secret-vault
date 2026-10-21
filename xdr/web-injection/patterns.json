@@ -1,0 +1,31 @@
+{
+  "schema": "aleph.xdr.web-injection-patterns.v1",
+  "source": "MITRE ATT&CK T1190",
+  "patterns": [
+    {
+      "name": "sql_query_injection",
+      "conditions": "요청 인자에 SQL 구문이 있거나 Wazuh가 SQL 구문 표기를 명시한다.",
+      "rationale": "MITRE ATT&CK T1190: 공개 웹 앱의 SQL 주입 입력은 취약점 악용 시도의 근거가 된다."
+    },
+    {
+      "name": "script_markup_injection",
+      "conditions": "요청 인자에 스크립트 태그·실행 속성이 있거나 Wazuh가 스크립트 삽입 표식을 명시한다.",
+      "rationale": "MITRE ATT&CK T1190: 공개 웹 앱에 실행 가능한 스크립트 표기를 넣는 요청은 악용 시도의 신호다."
+    },
+    {
+      "name": "repeated_path_traversal",
+      "conditions": "요청 경로에 ../ 이 두 번 이상 있거나 Wazuh가 여러 단계의 경로 이탈 표기를 명시한다.",
+      "rationale": "MITRE ATT&CK T1190: 공개 웹 앱의 파일 경계를 넘어가려는 입력은 취약점 악용의 신호다."
+    },
+    {
+      "name": "request_command_separator",
+      "conditions": "요청 인자에 명령 구분자와 명령이 함께 있거나 Wazuh가 반복된 명령 구분자 표기를 명시한다.",
+      "rationale": "MITRE ATT&CK T1190: 공개 웹 앱의 입력으로 명령을 이어 실행하려는 시도는 악용 신호다."
+    },
+    {
+      "name": "unconfirmed_t1190_request",
+      "conditions": "Wazuh가 T1190 관련 규칙 수준 5 이상을 보고했지만 구체적 주입과 반복이 확인되지 않는다.",
+      "rationale": "MITRE ATT&CK T1190: 단발 의심 경보만으로 실제 악용을 단정할 수 없어 알림으로 조사한다."
+    }
+  ]
+}
