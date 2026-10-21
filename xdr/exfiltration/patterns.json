@@ -1,0 +1,41 @@
+{
+  "schema": "aleph.xdr.exfiltration-patterns.v1",
+  "source": "MITRE ATT&CK T1041; MITRE ATT&CK T1048",
+  "patterns": [
+    {
+      "name": "c2_bulk_transfer",
+      "conditions": "명령 통로로 처음 보는 목적지에 큰 파일을 실제 반복 전송했고 전송량이 50000000바이트 이상이다.",
+      "rationale": "MITRE ATT&CK T1041: 기존 명령·제어 통로로 자료를 보내는 것은 알려진 유출 방식이다."
+    },
+    {
+      "name": "repeated_bulk_transfer",
+      "conditions": "같은 목적지로 큰 전송이 8번 이상 반복됐고 전송량이 50000000바이트 이상이다.",
+      "rationale": "MITRE ATT&CK T1041·T1048: 단일 소량 전송보다 같은 목적지로 반복된 대량 전송은 유출 의심을 강하게 한다."
+    },
+    {
+      "name": "unusual_port_bulk_transfer",
+      "conditions": "평소 쓰지 않던 포트로 50000000바이트 이상 자료를 실제 전송했다.",
+      "rationale": "MITRE ATT&CK T1048: 평소와 다른 통신 경로의 대량 외부 전송은 대체 프로토콜 유출의 조사 신호다."
+    },
+    {
+      "name": "external_repository_copy",
+      "conditions": "자료실 전체를 외부 주소로 복사했고 전송량이 50000000바이트 이상이다.",
+      "rationale": "MITRE ATT&CK T1041·T1048: 외부 목적지로 자료 전체를 옮기는 것은 통신 경로와 함께 확인할 유출 신호다."
+    },
+    {
+      "name": "off_hours_archive_transfer",
+      "conditions": "업무·수업 시간 밖에 압축 파일을 처음 보는 목적지로 실제 전송했고 전송량이 50000000바이트 이상이다.",
+      "rationale": "MITRE ATT&CK T1048: 압축만으로 단정하지 않고 낯선 목적지·시간·대량 전송을 결합해 조사한다."
+    },
+    {
+      "name": "unfamiliar_bulk_destination",
+      "conditions": "처음 보는 목적지로 50000000바이트 이상 자료가 실제 전송됐다.",
+      "rationale": "MITRE ATT&CK T1041·T1048: 낯선 목적지에 대한 대량 송신은 유출 가능성을 뒷받침한다."
+    },
+    {
+      "name": "unconfirmed_exfiltration_signal",
+      "conditions": "T1041·T1048 관련 경보 수준이 5 이상이나 위의 완료된 대량 전송 조건이 확인되지 않는다.",
+      "rationale": "MITRE ATT&CK T1041·T1048: 실패·소량·정상 목적지의 단서만으로 목적지를 차단하지 않고 조사한다."
+    }
+  ]
+}
