@@ -10,3 +10,5 @@ public/aleph.json
 *.tmp
 .vercel
 .env*
+# XDR 실행 중 생성되는 최소 메타데이터 알림 로그는 제출하지 않는다.
+xdr/alerts.log

@@ -1,0 +1,16 @@
+{
+  "schema": "aleph.xdr.brute-force-patterns.v1",
+  "source": "MITRE ATT&CK T1110",
+  "patterns": [
+    {
+      "name": "same_source_rapid_login_failures",
+      "conditions": "같은 출발 주소에서 짧은 시간에 로그인 실패가 30건 이상이고 Wazuh 규칙 수준이 10 이상이다.",
+      "rationale": "MITRE ATT&CK T1110: 한 출발지의 짧은 시간 반복 인증 실패는 무차별 대입의 대표 신호다."
+    },
+    {
+      "name": "password_spraying_across_accounts",
+      "conditions": "여러 계정에 같은 비밀번호를 넣거나 계정 이름을 바꿔 가며 실패가 이어지고 Wazuh 규칙 수준이 10 이상이다.",
+      "rationale": "MITRE ATT&CK T1110: 여러 계정을 상대로 반복 인증을 시도하는 행위는 비밀번호 스프레이·계정 대입 신호다."
+    }
+  ]
+}

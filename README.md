@@ -295,3 +295,9 @@ git diff --check
 `on-client/student/extension.mjs`의 `renderAiConnection`은 제공 화면이 전달한 AI 연결 점검의 전·진행 중·성공·실패를 구분한다. `test`는 시험 연결 점검, `verified`는 그 시각의 앱 권한 및 모델 응답 점검으로 표시하며, 둘 다 사건 설명 성공으로 취급하지 않는다. 안전한 오류 코드와 메시지에 따라 권한 준비·인증·접근 제한·사용량·이용 시간·요청 제한·시간 초과·네트워크·취소·모델 없음의 안내를 구분한다. `renderExplanation`은 별도로 요청한 사건 설명의 기본 성공 표식과 요약 또는 실패 및 기록 보존 문구만 표시한다. 재점검·계정 변경 때 제공 화면의 새 입력으로 이전 결과를 교체하며 학생 함수는 자동 재요청하지 않는다. 17단계 학생 구현 자체는 앞 단계 함수와 제공 서버·화면·인증 설정을 변경하지 않았다. 함께 병합된 5단계 보완은 위 별도 절에 기록한다.
 
 다시 확인하려면 `on-client/`에서 Node.js 24.19.0으로 `node --check student/extension.mjs`를 실행하고, `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1`로 앱을 켠다. `http://127.0.0.1:5189/`에서 사용자가 직접 계정 연결 확인 후 AI 연결 승인과 **현재 API 연결 점검**을 진행한다. 모델 응답 점검만으로 보안 기록의 사건 설명이 실행됐다고 표시하지 않는지 확인하고, 완료 후 실행 터미널에서 `Ctrl+C`로 중지한다. Workbench 수업용 AI, 앱 안의 AI 설명, ALEPH 공식 과제 판정은 별개다. 문법·모의 데이터 검사는 통과했지만 실제 계정 승인·AI 요청·사건 설명 실행과 17단계 공식 판정은 미실행·미확인이다. 열쇠나 토큰은 문서·코드·커밋에 넣지 않는다.
+## 보너스 xdr-01 저장점 — 무차별 로그인 공격
+
+- `xdr/brute-force/read-alerts.mjs`는 Wazuh 모양 경보에서 시각·출발 주소·계정·규칙 수준·설명만 추려 확인용으로 출력한다. 판정 모듈은 이를 불러오지 않는다.
+- `patterns.json`과 독립형 `decide.mjs`는 MITRE ATT&CK T1110 근거의 빠른 반복 실패와 여러 계정 대상 비밀번호 대입만 사용한다. `decide.mjs`는 파일·패키지·네트워크를 읽지 않는다.
+- `respond.mjs`는 명확한 `block` 결과만 5분짜리 주소·계정 결합 거부 규칙으로 바꾸고, `alert`·`block`의 최소 메타데이터만 `xdr/alerts.log`에 남긴다. 기존 `src/decider.mjs` 규칙은 변경하지 않는다.
+- 다시 확인: `node --test test/xdr-run.test.mjs test/brute-force.test.mjs`, 이어서 `node scripts/xdr-run.mjs brute-force`를 실행한다. 이 저장점의 가상 경보 결과는 `block` 10건, `alert` 9건, `record` 9건이며 정상 이벤트 차단은 0건이다. 이는 로컬 가상 경보 검사이며 운영 차단·심판 통과 증거가 아니다.
