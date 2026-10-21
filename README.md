@@ -322,3 +322,10 @@ git diff --check
 - `patterns.json`은 [MITRE ATT&CK T1543](https://attack.mitre.org/techniques/T1543/)과 [T1053](https://attack.mitre.org/techniques/T1053/)을 근거로 서명 없는 서비스 변경, 낯선 예약 작업, 시작 항목과 예약 작업의 결합, 미확인 변경을 구분한다. `decide.mjs`는 같은 패턴 상수를 맨 위에 두고 다른 파일·패키지·네트워크 없이 경보 한 건을 판단한다.
 - `respond.mjs`는 다시 확인된 명확한 차단 후보에만 5분 만료와 근거 경보 번호를 붙인 주소·계정 결합 거부 규칙을 만든다. 실제 서비스·예약 작업을 삭제하지 않으며 기존 `src/decider.mjs` 규칙도 바꾸지 않는다. 알림·차단의 최소 메타데이터만 Git에서 제외된 `xdr/alerts.log`에 기록한다.
 - 다시 확인: `node --test test/persistence.test.mjs test/xdr-run.test.mjs`, 이어서 `node scripts/xdr-run.mjs persistence`를 실행한다(`npm run xdr:run -- persistence`와 동일). 가상 경보 결과는 `block` 8건, `alert` 8건, `record` 8건이며 정상 이벤트 차단은 0건이다. 이 로컬 결과는 운영 차단이나 공식 심판 판정의 증거가 아니다.
+
+## 보너스 xdr-05 저장점 — 권한 가로채기
+
+- `xdr/privilege/read-alerts.mjs`는 원본 경보를 바꾸지 않고 26건에서 시각·출발 주소·계정·규칙 수준·설명만 26줄로 추리며 비밀값 형태를 가린다.
+- `patterns.json`은 [MITRE ATT&CK T1078](https://attack.mitre.org/techniques/T1078/)과 [T1068](https://attack.mitre.org/techniques/T1068/) 관련 경보를 바탕으로 실제 관리자 그룹 편입, 비정상 관리자 명령, 낯선 출발지의 세션 권한 변경과 미확인 단서를 구분한다. T1068 표기만으로 취약점 악용을 증명한다고 보지 않는다. `decide.mjs`는 같은 패턴을 파일 맨 위에 두고 다른 파일·패키지·네트워크 없이 경보 한 건에 답한다.
+- `respond.mjs`는 명확한 차단 후보에만 5분 만료와 근거 경보 번호를 담은 주소·계정 결합 세션 거부 규칙 후보를 만든다. 같은 계정의 다른 정상 주소나 같은 주소의 다른 계정을 막지 않는다. 알림·차단의 최소 메타데이터만 Git에서 제외된 `xdr/alerts.log`에 남긴다. 실제 세션 저장소나 기존 `src/decider.mjs` 규칙은 바꾸지 않는다.
+- 다시 확인: `node --test test/privilege.test.mjs test/xdr-run.test.mjs`, 이어서 `node scripts/xdr-run.mjs privilege`를 실행한다(`npm run xdr:run -- privilege`와 동일). 가상 경보 결과는 `block` 9건, `alert` 8건, `record` 9건이며 정상 이벤트 차단은 0건이다. 로컬 시험은 실제 세션 회수나 심판 판정의 증거가 아니다.

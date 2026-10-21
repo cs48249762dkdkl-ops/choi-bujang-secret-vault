@@ -1,0 +1,26 @@
+{
+  "schema": "aleph.xdr.privilege-patterns.v1",
+  "source": "MITRE ATT&CK T1068; MITRE ATT&CK T1078",
+  "patterns": [
+    {
+      "name": "unexpected_admin_group_membership",
+      "conditions": "평범한 계정이 실제 Administrators 그룹에 추가·재추가되고 높은 수준의 T1078 경보가 함께 있다.",
+      "rationale": "MITRE ATT&CK T1078: 도용된 정상 계정에 관리자 권한을 부여하면 기존 접근을 권한 확장에 악용할 수 있다."
+    },
+    {
+      "name": "suspicious_privileged_command",
+      "conditions": "방금 관리자 권한을 얻었거나 낯선 주소·업무 시간 밖 또는 다른 계정 권한으로 관리자 명령을 실행한다.",
+      "rationale": "MITRE ATT&CK T1078·T1068: 비정상 관리자 명령은 권한 악용 조사 근거이지만 이 신호만으로 취약점 악용을 증명하지 않는다."
+    },
+    {
+      "name": "unfamiliar_admin_session",
+      "conditions": "계정 세션이 관리자 권한으로 바뀌고 요청 주소도 처음 보는 곳이다.",
+      "rationale": "MITRE ATT&CK T1078: 평소와 다른 출발지에서 정상 계정의 권한이 갑자기 높아진 것은 계정 악용 신호다."
+    },
+    {
+      "name": "unconfirmed_privilege_signal",
+      "conditions": "T1068·T1078 관련 경보 수준이 5 이상이지만 실제 관리자 편입이나 성공한 비정상 명령은 확인되지 않는다.",
+      "rationale": "MITRE ATT&CK T1068·T1078: 단발 경고·실패·일반 그룹 변경만으로 세션을 거두지 않고 조사한다."
+    }
+  ]
+}
