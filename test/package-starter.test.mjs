@@ -35,6 +35,17 @@ test('?⑦궎吏??⑥닔 湲곗??쒕뒗 ?먮낯 ?쒖옉 ???API? ?쇱튂?쒕�
       'api/device/webauthn/authentication-verify.js',
     ].sort(),
  );
+  assert.ok(actual.length <= 12, 'Vercel Hobby 서버 함수 12개 제한');
+});
+
+test('인증 경로는 메모 서버 함수 한곳으로 연결된다', async () => {
+  const vercel = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url)));
+  assert.ok(vercel.rewrites.some(route =>
+    route.source === '/api/auth/session' && route.destination === '/api/notes?authAction=session'
+  ));
+  assert.ok(vercel.rewrites.some(route =>
+    route.source === '/api/auth/logout' && route.destination === '/api/notes?authAction=logout'
+  ));
 });
 
 test("unimplemented endpoints return 501 with no-store headers", async () => {

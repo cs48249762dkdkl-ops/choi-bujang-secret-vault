@@ -1,4 +1,5 @@
 ﻿import { createClient } from '@supabase/supabase-js';
+import { verifyRequestLogin } from './auth-session.mjs';
 import { createLoginVerifier } from './verify-login.mjs';
 
 export async function createDeviceApiContext(request) {
@@ -30,13 +31,15 @@ export async function createDeviceApiContext(request) {
     return { errorStatus: 500, error: 'LOGIN_VERIFIER_CONFIG_INVALID' };
   }
 
-  let identity;
+  let login;
 
   try {
-    identity = await verifyLogin(request.headers.authorization);
+    login = await verifyRequestLogin(request, verifyLogin);
   } catch {
     return { errorStatus: 401, error: 'LOGIN_REQUIRED' };
   }
+
+  const identity = login?.identity;
 
   if (!identity || identity.kind !== 'student') {
     return { errorStatus: 401, error: 'LOGIN_REQUIRED' };

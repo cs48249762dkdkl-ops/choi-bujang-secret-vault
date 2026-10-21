@@ -257,6 +257,15 @@ git diff --check
 
 `aleph.config.json`의 `repoUrl`은 현재 Git origin과 일치한다. 로그인 발급자/JWKS, 운영 측이 넣은 `judgeIssuer`, 기존 자료 API 허용 경로 및 5단계 원본 API 주소는 이번 단계에서 바꾸지 않았다. `publicAppUrl`은 현재 설정된 Production 주소이지만 **12단계 변경의 배포 여부는 별도로 확인해야 한다**.
 
+## 5단계 재제출 보완 — 브라우저 공개 키 제거
+
+- `public/index.html`은 Supabase 브라우저 SDK, 공개 키, 원본 자료 API를 포함하지 않는다. 로그인·로그아웃·현재 로그인 확인은 같은 출처의 `/api/auth/*`만 호출한다.
+- 로그인 성공 시 서버가 HttpOnly·Secure·SameSite=Strict 인증 쿠키를 설정한다. 브라우저는 토큰 값을 읽거나 저장하지 않는다.
+- 메모와 기기·작전실 API는 기존의 로그인 검증·소유자·승인 기기 검사를 유지하며, 서버 인증 쿠키를 검증해 기존 화면을 연다. 심판용 Bearer 검증 경로도 유지한다.
+- `aleph.config.json`의 원본 자료 HTTPS 경로, 메모 API 허용 경로와 `vercel.json`의 `nosniff` 헤더는 유지했고, 서버 인증 경로를 허용 경로에 추가했다.
+- 인증 경로는 `vercel.json`에서 기존 메모 서버 함수로 연결해 Vercel Hobby의 서버 함수 수를 12개로 유지한다. 기기 승인 화면의 WebAuthn 모듈도 기존 버전으로 불러온다.
+- 로컬 확인: `node --test test/*.test.mjs`, `npm run build -- --local`, `npm run bundle`을 순서대로 실행한다. 실제 계정 로그인·배포·심판 재제출은 이 저장점에서 실행하지 않았다.
+
 ## 13단계 저장점 — CHRONEX 로그인 사용자·기기·세션 표시
 
 4차 시작 틀 0.2.14를 `on-client/`에 추가했다. 이전 1~12단계 코드와 `aleph.config.json`의 12단계 설정은 보존했다. `on-client/student/extension.mjs`의 `renderIdentity`는 전달받은 `me`·`devices`·`sessions`의 불러오는 중·정상 응답·오류를 구분하고, 사용자·기기·세션의 ID·이름·상태를 새 DOM으로 표시한다. 현재 기기·세션과 두 목록에는 한국어 상태 설명 옆에 전달받은 원래 status 코드(`noncompliant`, `expired`, `revoked` 등)를 함께 표시한다. 예제 자료·연결 없음·확인 불가 모드를 표시하며, 오류 시 이전 사용자 값을 남기지 않는다. 다른 학생 함수와 제공 UI는 시작 틀 그대로다.
