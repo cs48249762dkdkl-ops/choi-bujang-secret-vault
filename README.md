@@ -301,3 +301,7 @@ git diff --check
 - `patterns.json`과 독립형 `decide.mjs`는 MITRE ATT&CK T1110 근거의 빠른 반복 실패와 여러 계정 대상 비밀번호 대입만 사용한다. `decide.mjs`는 파일·패키지·네트워크를 읽지 않는다.
 - `respond.mjs`는 명확한 `block` 결과만 5분짜리 주소·계정 결합 거부 규칙으로 바꾸고, `alert`·`block`의 최소 메타데이터만 `xdr/alerts.log`에 남긴다. 기존 `src/decider.mjs` 규칙은 변경하지 않는다.
 - 다시 확인: `node --test test/xdr-run.test.mjs test/brute-force.test.mjs`, 이어서 `node scripts/xdr-run.mjs brute-force`를 실행한다. 시험은 `decide.mjs` 한 파일을 빈 폴더로 복사해 불러오는 경우도 확인한다. 제출 전에는 GitHub 기본 브랜치에도 이 커밋이 있는지 확인한다. 이 저장점의 가상 경보 결과는 `block` 10건, `alert` 9건, `record` 9건이며 정상 이벤트 차단은 0건이다. 이는 로컬 가상 경보 검사이며 운영 차단·심판 통과 증거가 아니다.
+
+## 보너스 xdr-02 제작 1 저장점 — 웹 주입 경보 읽기
+
+`xdr/web-injection/read-alerts.mjs`는 제공된 경보의 시각·출발 주소·계정·규칙 수준·설명만 확인용으로 추리고, 출력 전에 비밀값 형태를 가린다. 원본 경보와 기존 ZTNA 판정 규칙은 그대로이며, 웹 주입 패턴·독립 판단·차단 연결은 아직 제작하지 않았다. `node --test test/web-injection-read-alerts.test.mjs`와 `node xdr/web-injection/read-alerts.mjs`로 각각 시험과 경보 26줄 출력을 확인한다. 이 로컬 가상 경보 검사는 운영 차단이나 심판 판정이 아니다.
