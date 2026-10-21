@@ -300,4 +300,4 @@ git diff --check
 - `xdr/brute-force/read-alerts.mjs`는 Wazuh 모양 경보에서 시각·출발 주소·계정·규칙 수준·설명만 추려 확인용으로 출력하고, 이름이 있거나 없는 JWT·Bearer·긴 토큰 형태는 가린다. 판정 모듈은 이를 불러오지 않는다.
 - `patterns.json`과 독립형 `decide.mjs`는 MITRE ATT&CK T1110 근거의 빠른 반복 실패와 여러 계정 대상 비밀번호 대입만 사용한다. `decide.mjs`는 파일·패키지·네트워크를 읽지 않는다.
 - `respond.mjs`는 명확한 `block` 결과만 5분짜리 주소·계정 결합 거부 규칙으로 바꾸고, `alert`·`block`의 최소 메타데이터만 `xdr/alerts.log`에 남긴다. 기존 `src/decider.mjs` 규칙은 변경하지 않는다.
-- 다시 확인: `node --test test/xdr-run.test.mjs test/brute-force.test.mjs`, 이어서 `node scripts/xdr-run.mjs brute-force`를 실행한다. 이 저장점의 가상 경보 결과는 `block` 10건, `alert` 9건, `record` 9건이며 정상 이벤트 차단은 0건이다. 이는 로컬 가상 경보 검사이며 운영 차단·심판 통과 증거가 아니다.
+- 다시 확인: `node --test test/xdr-run.test.mjs test/brute-force.test.mjs`, 이어서 `node scripts/xdr-run.mjs brute-force`를 실행한다. 시험은 `decide.mjs` 한 파일을 빈 폴더로 복사해 불러오는 경우도 확인한다. 제출 전에는 GitHub 기본 브랜치에도 이 커밋이 있는지 확인한다. 이 저장점의 가상 경보 결과는 `block` 10건, `alert` 9건, `record` 9건이며 정상 이벤트 차단은 0건이다. 이는 로컬 가상 경보 검사이며 운영 차단·심판 통과 증거가 아니다.

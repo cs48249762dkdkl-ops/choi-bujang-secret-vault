@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { copyFile, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { test } from 'node:test';
 import { PATTERNS, decide } from '../xdr/brute-force/decide.mjs';
 import { readAlerts } from '../xdr/brute-force/read-alerts.mjs';
@@ -44,6 +44,25 @@ test('패턴은 T1110 근거를 가지며 독립 판정기 상수와 같다', as
   assert.ok(PATTERNS.every((pattern) => pattern.name && pattern.conditions && pattern.rationale));
   const source = await readFile(join(root, 'xdr', 'brute-force', 'decide.mjs'), 'utf8');
   assert.equal(/^\s*import\s/m.test(source), false);
+});
+
+test('판정 모듈은 파일 하나만 있는 격리 폴더에서도 불러올 수 있다', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'brute-force-isolated-'));
+  const isolatedPath = join(directory, 'decide.mjs');
+  try {
+    await copyFile(join(root, 'xdr', 'brute-force', 'decide.mjs'), isolatedPath);
+    const isolated = await import(pathToFileURL(isolatedPath).href);
+    assert.equal(typeof isolated.decide, 'function');
+
+    for (const alert of fixture.alerts) {
+      const result = isolated.decide(alert);
+      assert.ok(['block', 'alert', 'record'].includes(result.action));
+      assert.ok(result.confidence >= 0 && result.confidence <= 1);
+      assert.equal(typeof result.reason, 'string');
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test('명확한 공격만 차단하고 애매한 실패와 정상 이벤트를 구분한다', () => {
