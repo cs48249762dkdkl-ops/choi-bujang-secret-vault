@@ -308,3 +308,10 @@ git diff --check
 - `patterns.json`은 [MITRE ATT&CK T1190](https://attack.mitre.org/techniques/T1190/)을 근거로 SQL 구문·스크립트 표식·반복 경로 이탈·명령 구분자와 불확실한 경보를 정리한다. 같은 상수를 맨 위에 둔 `decide.mjs`는 다른 파일·패키지·네트워크 없이 경보 한 건에 답한다. 규칙 수준 10 이상, 같은 출발 주소의 반복 8건 이상, 구체적인 주입 신호가 함께 있을 때만 `block` 후보로 삼는다.
 - `respond.mjs`는 차단 후보에만 5분 만료와 근거 경보 번호가 있는 출발 주소 거부 규칙을 만든다. 알림과 차단의 최소 메타데이터만 `xdr/alerts.log`에 기록하며 기존 `src/decider.mjs`의 규칙은 변경하지 않는다.
 - 다시 확인: `node --test test/web-injection-read-alerts.test.mjs test/web-injection.test.mjs`와 `node scripts/xdr-run.mjs web-injection`을 실행한다. 가상 경보 26건의 결과는 `block` 8건, `alert` 9건, `record` 9건이며 정상 이벤트 차단은 0건이다. 격리 단일 파일 시험과 로컬 실행기 검사는 운영 차단이나 심판 판정의 증거가 아니다.
+
+## 보너스 xdr-03 저장점 — 알려진 취약점 악용
+
+- `xdr/known-cve/read-alerts.mjs`는 제공된 경보 24건에서 시각·출발 주소·계정·규칙 수준·설명만 24줄로 추리고 비밀값 형태를 가린다. 원본 경보는 바꾸지 않는다.
+- `patterns.json`은 [Apache Log4j CVE-2021-44228](https://logging.apache.org/security.html)과 [MITRE ATT&CK T1190](https://attack.mitre.org/techniques/T1190/)을 근거로 완전한 원격 JNDI 조회 구문, 명시적인 점검 도구 식별자, 미확인 경보를 구분한다. `decide.mjs`는 같은 패턴 상수를 파일 맨 위에 두고 다른 파일·패키지·네트워크 없이 계산한다. 실제 요청 필드의 완전한 구문과 높은 수준의 T1190 경보가 함께 있을 때만 차단 후보로 삼는다.
+- `respond.mjs`는 다시 확인된 차단 후보에만 5분 만료와 근거 경보 번호를 담은 출발 주소 거부 규칙을 만든다. 알림·차단의 최소 메타데이터만 Git에서 제외된 `xdr/alerts.log`에 기록한다. 기존 `src/decider.mjs`와 규칙은 변경하지 않는다.
+- 다시 확인: `node --test test/known-cve.test.mjs test/xdr-run.test.mjs`, 이어서 `node scripts/xdr-run.mjs known-cve`를 실행한다(`npm run xdr:run -- known-cve`와 동일). 가상 경보 결과는 `block` 8건, `alert` 8건, `record` 8건이며 정상 이벤트 차단은 0건이다. 격리 단일 파일 시험과 로컬 실행기 검사는 운영 차단이나 심판 판정의 증거가 아니다.

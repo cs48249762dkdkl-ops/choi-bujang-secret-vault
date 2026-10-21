@@ -1,0 +1,21 @@
+{
+  "schema": "aleph.xdr.known-cve-patterns.v1",
+  "source": "CVE-2021-44228; MITRE ATT&CK T1190",
+  "patterns": [
+    {
+      "name": "log4shell_remote_jndi_lookup",
+      "conditions": "요청 머리글이나 인자에 원격 프로토콜을 가리키는 완전한 JNDI 조회 구문이 있고 높은 수준의 T1190 경보가 함께 있다.",
+      "rationale": "CVE-2021-44228: Log4j가 공격자 제어 JNDI 끝점을 조회할 수 있는 입력은 공개 앱 악용(T1190)의 구체적 증거다."
+    },
+    {
+      "name": "known_cve_scanner_trace",
+      "conditions": "요청 머리글에 Log4Shell 점검 도구의 명시적 식별자가 있지만 완전한 원격 JNDI 구문은 없다.",
+      "rationale": "CVE-2021-44228·MITRE ATT&CK T1190: 취약점 점검 흔적은 조사 신호이나 단독으로 공격 성공이나 차단 근거는 아니다."
+    },
+    {
+      "name": "unconfirmed_t1190_cve_signal",
+      "conditions": "T1190 관련 Wazuh 규칙 수준이 5 이상이지만 완전한 원격 JNDI 구문이 확인되지 않는다.",
+      "rationale": "MITRE ATT&CK T1190: 취약점 이름·잘린 구문·문서 조회만으로 악용을 단정할 수 없으므로 알림으로 조사한다."
+    }
+  ]
+}
