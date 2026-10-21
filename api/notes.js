@@ -1,7 +1,9 @@
 ﻿import { checkDeviceAccess } from '../src/device-access.mjs';
 import { randomUUID } from 'node:crypto';
+import { verifyRequestLogin } from '../src/auth-session.mjs';
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import { createClient } from '@supabase/supabase-js';
+import { handleAuthRequest } from '../src/auth-api.mjs';
 
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
@@ -40,8 +42,16 @@ export default async function handler(request, response) {
     });
   }
 
-  const identity =
-    await verifyLogin(request.headers.authorization);
+  const requestUrl = new URL(request.url, `https://${request.headers.host}`);
+  const authAction = requestUrl.searchParams.get('authAction');
+  if (authAction === 'session' || authAction === 'logout') {
+    return handleAuthRequest(request, response, {
+      action: authAction, config, supabaseUrl, supabaseSecretKey, verifyLogin
+    });
+  }
+
+  const login = await verifyRequestLogin(request, verifyLogin);
+  const identity = login?.identity;
 
   if (!identity || identity.kind !== 'student') {
     return response.status(401).json({

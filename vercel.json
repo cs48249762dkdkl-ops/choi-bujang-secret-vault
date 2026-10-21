@@ -5,6 +5,14 @@
   "outputDirectory": "public",
   "rewrites": [
   {
+    "source": "/api/auth/session",
+    "destination": "/api/notes?authAction=session"
+  },
+  {
+    "source": "/api/auth/logout",
+    "destination": "/api/notes?authAction=logout"
+  },
+  {
     "source": "/api/notes/:id",
     "destination": "/api/notes?noteId=:id"
   }

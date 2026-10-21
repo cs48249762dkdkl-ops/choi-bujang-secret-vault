@@ -12,6 +12,9 @@
   "allowedRoutes": [
     "POST /api/notes",
     "POST /api/notes/restore",
+    "GET /api/auth/session",
+    "POST /api/auth/session",
+    "POST /api/auth/logout",
     "GET /api/notes",
     "GET /api/notes/:id",
     "PUT /api/notes/:id",

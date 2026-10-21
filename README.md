@@ -257,6 +257,15 @@ git diff --check
 
 `aleph.config.json`의 `repoUrl`은 현재 Git origin과 일치한다. 로그인 발급자/JWKS, 운영 측이 넣은 `judgeIssuer`, 기존 자료 API 허용 경로 및 5단계 원본 API 주소는 이번 단계에서 바꾸지 않았다. `publicAppUrl`은 현재 설정된 Production 주소이지만 **12단계 변경의 배포 여부는 별도로 확인해야 한다**.
 
+## 5단계 재제출 보완 — 브라우저 공개 키 제거
+
+- `public/index.html`은 Supabase 브라우저 SDK, 공개 키, 원본 자료 API를 포함하지 않는다. 로그인·로그아웃·현재 로그인 확인은 같은 출처의 `/api/auth/*`만 호출한다.
+- 로그인 성공 시 서버가 HttpOnly·Secure·SameSite=Strict 인증 쿠키를 설정한다. 브라우저는 토큰 값을 읽거나 저장하지 않는다.
+- 메모와 기기·작전실 API는 기존의 로그인 검증·소유자·승인 기기 검사를 유지하며, 서버 인증 쿠키를 검증해 기존 화면을 연다. 심판용 Bearer 검증 경로도 유지한다.
+- `aleph.config.json`의 원본 자료 HTTPS 경로, 메모 API 허용 경로와 `vercel.json`의 `nosniff` 헤더는 유지했고, 서버 인증 경로를 허용 경로에 추가했다.
+- 인증 경로는 `vercel.json`에서 기존 메모 서버 함수로 연결해 Vercel Hobby의 서버 함수 수를 12개로 유지한다. 기기 승인 화면의 WebAuthn 모듈도 기존 버전으로 불러온다.
+- 로컬 확인: `node --test test/*.test.mjs`, `npm run build -- --local`, `npm run bundle`을 순서대로 실행한다. 실제 계정 로그인·배포·심판 재제출은 이 저장점에서 실행하지 않았다.
+
 ## 13단계 저장점 — CHRONEX 로그인 사용자·기기·세션 표시
 
 4차 시작 틀 0.2.14를 `on-client/`에 추가했다. 이전 1~12단계 코드와 `aleph.config.json`의 12단계 설정은 보존했다. `on-client/student/extension.mjs`의 `renderIdentity`는 전달받은 `me`·`devices`·`sessions`의 불러오는 중·정상 응답·오류를 구분하고, 사용자·기기·세션의 ID·이름·상태를 새 DOM으로 표시한다. 현재 기기·세션과 두 목록에는 한국어 상태 설명 옆에 전달받은 원래 status 코드(`noncompliant`, `expired`, `revoked` 등)를 함께 표시한다. 예제 자료·연결 없음·확인 불가 모드를 표시하며, 오류 시 이전 사용자 값을 남기지 않는다. 다른 학생 함수와 제공 UI는 시작 틀 그대로다.
@@ -283,6 +292,6 @@ git diff --check
 
 ## 17단계 저장점 — CHRONEX 앱 내부 AI 연결 표시
 
-`on-client/student/extension.mjs`의 `renderAiConnection`은 제공 화면이 전달한 AI 연결 점검의 전·진행 중·성공·실패를 구분한다. `test`는 시험 연결 점검, `verified`는 그 시각의 앱 권한 및 모델 응답 점검으로 표시하며, 둘 다 사건 설명 성공으로 취급하지 않는다. 안전한 오류 코드와 메시지에 따라 권한 준비·인증·접근 제한·사용량·이용 시간·요청 제한·시간 초과·네트워크·취소·모델 없음의 안내를 구분한다. `renderExplanation`은 별도로 요청한 사건 설명의 기본 성공 표식과 요약 또는 실패 및 기록 보존 문구만 표시한다. 재점검·계정 변경 때 제공 화면의 새 입력으로 이전 결과를 교체하며 학생 함수는 자동 재요청하지 않는다. 앞 단계 함수와 제공 서버·화면·인증 설정은 변경하지 않았다.
+`on-client/student/extension.mjs`의 `renderAiConnection`은 제공 화면이 전달한 AI 연결 점검의 전·진행 중·성공·실패를 구분한다. `test`는 시험 연결 점검, `verified`는 그 시각의 앱 권한 및 모델 응답 점검으로 표시하며, 둘 다 사건 설명 성공으로 취급하지 않는다. 안전한 오류 코드와 메시지에 따라 권한 준비·인증·접근 제한·사용량·이용 시간·요청 제한·시간 초과·네트워크·취소·모델 없음의 안내를 구분한다. `renderExplanation`은 별도로 요청한 사건 설명의 기본 성공 표식과 요약 또는 실패 및 기록 보존 문구만 표시한다. 재점검·계정 변경 때 제공 화면의 새 입력으로 이전 결과를 교체하며 학생 함수는 자동 재요청하지 않는다. 17단계 학생 구현 자체는 앞 단계 함수와 제공 서버·화면·인증 설정을 변경하지 않았다. 함께 병합된 5단계 보완은 위 별도 절에 기록한다.
 
 다시 확인하려면 `on-client/`에서 Node.js 24.19.0으로 `node --check student/extension.mjs`를 실행하고, `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1`로 앱을 켠다. `http://127.0.0.1:5189/`에서 사용자가 직접 계정 연결 확인 후 AI 연결 승인과 **현재 API 연결 점검**을 진행한다. 모델 응답 점검만으로 보안 기록의 사건 설명이 실행됐다고 표시하지 않는지 확인하고, 완료 후 실행 터미널에서 `Ctrl+C`로 중지한다. Workbench 수업용 AI, 앱 안의 AI 설명, ALEPH 공식 과제 판정은 별개다. 문법·모의 데이터 검사는 통과했지만 실제 계정 승인·AI 요청·사건 설명 실행과 17단계 공식 판정은 미실행·미확인이다. 열쇠나 토큰은 문서·코드·커밋에 넣지 않는다.
