@@ -1,12 +1,21 @@
 import { readFile } from 'node:fs/promises';
 
 const FIXTURE_URL = new URL('../fixtures/brute-force.json', import.meta.url);
-const SECRET_VALUE = /((?:password|passwd|token|secret|api[_-]?key|authorization)\s*[:=]\s*)([^\s,;]+)/gi;
+const NAMED_SECRET = /((?:password|passwd|token|secret|api[_-]?key|authorization)\s*[:=]\s*)(?:Bearer\s+)?[^\s,;]+/gi;
+const BEARER_TOKEN = /\bBearer\s+[A-Za-z0-9._~+/-]{12,}/gi;
+const JWT_LIKE_TOKEN = /\beyJ[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{6,}\b/g;
+const PROVIDER_TOKEN = /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[A-Z0-9]{16})\b/g;
+const LONG_OPAQUE_TOKEN = /(?<![A-Za-z0-9+/_=-])(?=[A-Za-z0-9+/_=-]{24,}(?![A-Za-z0-9+/_=-]))(?=[A-Za-z0-9+/_=-]*[A-Za-z])(?=[A-Za-z0-9+/_=-]*\d)[A-Za-z0-9+/_=-]{24,}(?![A-Za-z0-9+/_=-])/g;
 
 function safeText(value) {
-  return typeof value === 'string'
-    ? value.replace(SECRET_VALUE, '$1[REDACTED]')
-    : null;
+  if (typeof value !== 'string') return null;
+
+  return value
+    .replace(BEARER_TOKEN, 'Bearer [REDACTED]')
+    .replace(NAMED_SECRET, '$1[REDACTED]')
+    .replace(JWT_LIKE_TOKEN, '[REDACTED]')
+    .replace(PROVIDER_TOKEN, '[REDACTED]')
+    .replace(LONG_OPAQUE_TOKEN, '[REDACTED]');
 }
 
 /**

@@ -19,6 +19,24 @@ test('읽기 모듈은 경보마다 허용된 다섯 필드만 한 줄로 만든
   }
 });
 
+test('읽기 모듈은 이름 없는 토큰 형태도 출력 전에 가린다', () => {
+  const opaque = 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6';
+  const jwtLike = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0In0.signature-value';
+  const rows = readAlerts({
+    schema: 'aleph.xdr.fixture.v1',
+    alerts: [{
+      timestamp: '2026-09-27T09:12:01+09:00',
+      rule: { level: 12, description: `authorization: Bearer ${opaque}; raw ${jwtLike}` },
+      data: { srcip: '192.0.2.10', srcuser: jwtLike },
+    }],
+  });
+  const printed = JSON.stringify(rows[0]);
+
+  assert.doesNotMatch(printed, new RegExp(opaque, 'u'));
+  assert.doesNotMatch(printed, new RegExp(jwtLike.replaceAll('.', '\\.'), 'u'));
+  assert.match(printed, /\[REDACTED\]/u);
+});
+
 test('패턴은 T1110 근거를 가지며 독립 판정기 상수와 같다', async () => {
   const listed = JSON.parse(await readFile(join(root, 'xdr', 'brute-force', 'patterns.json'), 'utf8'));
   assert.equal(listed.source, 'MITRE ATT&CK T1110');
