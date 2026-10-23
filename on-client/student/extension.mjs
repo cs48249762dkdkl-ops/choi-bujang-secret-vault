@@ -554,6 +554,81 @@ export function createStudentView() {
       line(root, 'AI 설명과 제안만으로 보안 조치는 실행되지 않았습니다.');
       return root;
     },
-    renderAction() { return '학생 구현 대기: 현재 사건·조치·실제 대상·사람 확인·ACK와 원천 효과·unknown을 구분하세요.'; },
+    renderAction({ status, event, actionId, target, receipt, observation, message, confirmationExpiresAt, error }) {
+      // 매번 새 DOM을 반환하여 이전 사건·대상·요청의 표시를 남기지 않는다.
+      const root = document.createElement('div');
+      const line = (text) => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = text;
+        root.append(paragraph);
+      };
+      const value = (input) => typeof input === 'string' && input.trim() ? input : null;
+      const eventId = value(event?.id);
+      const selectedAction = value(actionId);
+      const requestId = value(receipt?.requestId);
+      const sameIntent = (!receipt?.eventId || receipt.eventId === eventId)
+        && (!receipt?.actionId || receipt.actionId === selectedAction);
+
+      if (eventId) root.dataset.studentActionEvent = eventId;
+      if (requestId && sameIntent) root.dataset.studentActionRequest = requestId;
+
+      const effectConfirmed = status === 'succeeded' && observation?.effectApplied === true && sameIntent;
+      if (!sameIntent) {
+        line('현재 사건·조치와 서버 기록이 일치하지 않습니다. 결과 불명(unknown)이며 성공이나 효과 없음으로 판단하지 마세요. 연동 시스템 결과만 재조회하세요.');
+      } else if (status === 'idle') {
+        line('아직 미실행(idle). AI 조치 제안은 실제 집행이 아닙니다.');
+      } else if (status === 'loading') {
+        line('조치 준비 또는 연동 시스템 결과 조회 중(loading). 완료나 효과는 아직 확인되지 않았습니다.');
+      } else if (status === 'prepared') {
+        line('준비됨·미실행(prepared). 실제 대상과 조치를 확인한 뒤 제공 화면에서 사람이 별도로 집행을 확인해야 합니다.');
+      } else if (status === 'executing') {
+        line('사람 확인 후 서버에 전달 중(executing). 결과는 아직 확인되지 않았습니다.');
+      } else if (status === 'pending') {
+        line('서버 접수·처리 중(pending). 접수 응답(ACK)은 실제 효과 확인이 아닙니다.');
+      } else if (effectConfirmed) {
+        line('연동 시스템 효과 확인(succeeded).');
+      } else if (status === 'succeeded' || status === 'unknown') {
+        line('결과 불명(unknown). 성공이나 효과 없음으로 판단하지 말고 연동 시스템 결과만 재조회하세요.');
+      } else if (status === 'denied') {
+        line('연동 시스템이 조치를 거절했습니다(denied).');
+      } else if (status === 'failed') {
+        line('연동 시스템에서 조치가 실패했습니다(failed).');
+      } else if (status === 'expired') {
+        line('사람 확인 기한이 지났습니다(expired). 현재 준비로 집행하지 말고 다시 준비하세요.');
+      } else if (status === 'error') {
+        line('요청이 처리되지 않았습니다(error). 거절 판정이나 효과 확인이 아닙니다.');
+      } else {
+        line('조치 상태 확인 불가(unknown). 성공이나 효과 없음으로 판단하지 마세요.');
+      }
+
+      if (eventId) line(`현재 사건 ID: ${eventId}`);
+      if (Array.isArray(event?.evidence)) {
+        const evidenceIds = event.evidence.map((item) => value(item?.id)).filter(Boolean);
+        if (evidenceIds.length) line(`근거 ID: ${evidenceIds.join(', ')}`);
+      }
+      if (selectedAction) line(`조치 ID: ${selectedAction}`);
+      if (value(target?.id)) line(`실제 대상 ID: ${target.id}`);
+      if (target?.generation !== undefined && target?.generation !== null) line(`대상 세대: ${target.generation}`);
+      if (status === 'prepared' && value(confirmationExpiresAt)) line(`사람 확인 기한: ${confirmationExpiresAt}`);
+      if (sameIntent && requestId) line(`요청 ID: ${requestId}`);
+      if (sameIntent && value(receipt?.receiptId)) line(`영수증 ID: ${receipt.receiptId}`);
+      if (sameIntent && receipt?.version !== undefined && receipt?.version !== null) line(`영수증 버전: ${receipt.version}`);
+      if (sameIntent && receipt?.replayed === true) line('같은 요청의 재조회 결과입니다(replayed). 새 집행 요청이 아닙니다.');
+      if (sameIntent && receipt?.superseded === true) line('이전 조회는 최신 결과를 대신하지 않습니다(superseded). 결과만 다시 조회하세요.');
+      if (effectConfirmed) {
+        if (value(observation?.observedAt)) line(`관측 시각: ${observation.observedAt}`);
+        line('effectApplied: true');
+      }
+      if (value(message)) line(`안내: ${message}`);
+      if (error && (status === 'error' || status === 'expired' || status === 'unknown')) {
+        if (value(error.code)) line(`오류 코드: ${error.code}`);
+        if (value(error.message)) line(`오류 내용: ${error.message}`);
+      }
+      if (status === 'idle' && event && Array.isArray(event.supportedActions) && event.supportedActions.length === 0) {
+        line('현재 기록에는 연동 시스템이 지원하는 조치가 없어 조치 준비 버튼이 나오지 않는 것이 정상입니다.');
+      }
+      if (status === 'idle') line('조치 화면 취소는 이미 서버에 전달된 효과를 되돌리지 않습니다.');
+      return root;
+    },
   };
 }
