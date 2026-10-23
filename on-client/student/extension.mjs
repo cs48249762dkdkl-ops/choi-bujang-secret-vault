@@ -422,32 +422,136 @@ export function createStudentView() {
       line('다시 점검은 사용자가 현재 API 연결 점검 버튼을 직접 눌러야 합니다. 자동으로 다시 점검하지 않습니다.');
       return root;
     },
-    renderExplanation({ event, explanation }) {
+    renderExplanation({ event, explanation, checkedAt }) {
       const root = document.createElement('div');
-      const line = text => {
+      const line = (parent, text) => {
         const paragraph = document.createElement('p');
         paragraph.textContent = text;
-        root.append(paragraph);
+        parent.append(paragraph);
       };
-      if (!event?.id) {
-        line('보안 기록에서 기록을 먼저 고르세요.');
-      } else if (explanation?.status === 'loading') {
-        line(`사건 ${event.id}의 AI 설명을 요청하는 중입니다.`);
-      } else if (explanation?.status === 'ok' && typeof explanation.data?.summary === 'string') {
-        root.setAttribute('data-student-explanation-event', event.id);
-        line(`사건 ID: ${event.id}`);
-        line('AI 설명(참고용): 아래 요약은 별도로 요청한 사건 설명이며 판정이나 조치 실행이 아닙니다.');
-        line(explanation.data.summary);
-      } else if (explanation?.status === 'error') {
-        const code = typeof explanation.error?.code === 'string' && explanation.error.code.trim() ? explanation.error.code : 'AI_REQUEST_UNVERIFIED';
-        const message = typeof explanation.error?.message === 'string' && explanation.error.message.trim() ? explanation.error.message : '확인 불가';
-        line(`AI 설명 실패: ${code} · ${message}`);
-        line('보안 기록은 그대로입니다. 설명 실패를 접근 판정이나 기록 실패로 바꾸지 않습니다.');
-      } else if (explanation?.status === 'ok') {
-        line('AI 설명 내용을 확인할 수 없습니다. 보안 기록은 그대로입니다.');
-      } else {
-        line('이 사건의 AI 설명은 아직 실행하지 않았습니다.');
+      const heading = text => {
+        const title = document.createElement('h4');
+        title.textContent = text;
+        root.append(title);
+      };
+      const safeCode = /^[A-Z][A-Z0-9_]{0,95}$/.test(explanation?.error?.code ?? '')
+        ? explanation.error.code : null;
+      const unusable = reason => {
+        line(root, `AI 설명을 사용할 수 없습니다: ${reason}`);
+        if (safeCode) line(root, `오류 코드: ${safeCode}`);
+        line(root, '보안 기록은 그대로입니다. 근거가 없는 내용을 만들어 표시하지 않습니다.');
+        return root;
+      };
+
+      // 오류가 먼저 전달되면 선택된 기록이 없어도 실패 원인을 보여 준다.
+      if (explanation?.status === 'error') {
+        const message = typeof explanation.error?.message === 'string' && explanation.error.message.trim()
+          ? explanation.error.message : '실패 이유를 확인할 수 없습니다.';
+        line(root, `AI 설명 실패: ${safeCode ?? 'AI_REQUEST_UNVERIFIED'} · ${message}`);
+        line(root, '보안 기록은 그대로입니다. AI 설명 실패는 접근 거부나 과제 실패가 아닙니다.');
+        return root;
       }
+      if (!event?.id) {
+        line(root, '보안 기록에서 기록을 먼저 고르세요.');
+        return root;
+      }
+      if (explanation?.status === 'loading') {
+        line(root, `사건 ${event.id}의 AI 설명을 요청하는 중입니다.`);
+        return root;
+      }
+      if (explanation?.status !== 'ok') {
+        line(root, '이 사건의 AI 설명은 아직 실행하지 않았습니다.');
+        return root;
+      }
+
+      const data = explanation.data;
+      if (!data || typeof data !== 'object') return unusable('설명 자료를 확인할 수 없습니다.');
+      if (data.executed !== false) return unusable('AI가 이미 실행했다고 답한 설명은 사용할 수 없습니다.');
+      if (data.requiresHumanConfirmation !== true) return unusable('사람 확인 조건이 맞지 않습니다.');
+      if (typeof data.summary !== 'string' || !data.summary.trim()) {
+        return unusable('AI 요약을 확인할 수 없습니다.');
+      }
+      if (!Array.isArray(event.evidence) || event.evidence.length === 0
+        || event.evidence.some(row => typeof row?.id !== 'string' || typeof row?.text !== 'string')) {
+        return unusable('현재 기록에 대조할 근거가 부족합니다.');
+      }
+      if (!Array.isArray(event.rules) || !event.rules.every(row => typeof row?.id === 'string' && typeof row?.text === 'string')
+        || !event.state || !Array.isArray(event.supportedActions)) {
+        return unusable('현재 기록의 규칙·상태·지원 조치를 확인할 수 없습니다.');
+      }
+      const evidence = new Map(event.evidence.map(row => [row.id, row.text]));
+      const references = data.evidenceIds;
+      if (evidence.size !== event.evidence.length || !Array.isArray(references)
+        || references.length !== evidence.size || new Set(references).size !== references.length
+        || references.some(id => !evidence.has(id))) {
+        return unusable('인용한 근거 ID가 현재 사건의 근거와 맞지 않습니다.');
+      }
+      if (!Array.isArray(data.proposals) || data.proposals.some(proposal =>
+        typeof proposal?.action !== 'string' || !event.supportedActions.includes(proposal.action)
+        || typeof proposal.reason !== 'string' || !proposal.reason.trim()
+        || !Array.isArray(proposal.evidenceIds) || proposal.evidenceIds.length === 0
+        || proposal.evidenceIds.some(id => !evidence.has(id)))) {
+        return unusable('조치 제안이나 제안 근거가 현재 사건과 맞지 않습니다.');
+      }
+
+      // 성공 표식은 현재 사건의 근거와 설명을 모두 대조한 뒤에만 붙인다.
+      root.setAttribute('data-student-explanation-event', event.id);
+      heading('AI 설명(참고용)');
+      line(root, `사건 ID: ${event.id}`);
+      line(root, 'AI 요약은 참고 정보입니다. 사실 판단은 아래 근거와 연동 시스템의 현재 상태를 기준으로 합니다.');
+      line(root, data.summary);
+      if (typeof checkedAt === 'string' && checkedAt.trim()) line(root, `설명 확인 시각: ${checkedAt}`);
+
+      heading('인용한 근거');
+      const evidenceList = document.createElement('ul');
+      for (const id of references) {
+        const item = document.createElement('li');
+        item.textContent = `${id} — ${evidence.get(id)}`;
+        evidenceList.append(item);
+      }
+      root.append(evidenceList);
+
+      heading('현재 규칙');
+      if (event.rules.length === 0) line(root, '표시할 규칙이 없습니다.');
+      const ruleList = document.createElement('ul');
+      for (const rule of event.rules) {
+        const item = document.createElement('li');
+        item.textContent = `${rule.id} — ${rule.text}`;
+        ruleList.append(item);
+      }
+      root.append(ruleList);
+
+      const labels = {
+        access: { allowed: '접근 허용', denied: '접근 거부', unknown: '확인 불가' },
+        session: { active: '활성', expired: '만료', revoked: '철회됨', unknown: '확인 불가' },
+        device: { compliant: '보안 기준 충족', noncompliant: '보안 기준 미충족', unknown: '확인 불가' },
+      };
+      const names = { access: '접속', session: '세션', device: '기기' };
+      heading('현재 상태');
+      for (const key of ['access', 'session', 'device']) {
+        const code = Object.hasOwn(labels[key], event.state[key]) ? event.state[key] : 'unknown';
+        line(root, `${names[key]}: ${labels[key][code]}(${code})`);
+      }
+      heading('확인되지 않은 현재 상태');
+      const unknown = ['access', 'session', 'device'].filter(key => event.state[key] === 'unknown');
+      if (unknown.length === 0) line(root, '없음');
+      else for (const key of unknown) line(root, `${names[key]}: 확인 불가(unknown)`);
+
+      heading('조치 제안');
+      if (data.proposals.length === 0) {
+        line(root, event.supportedActions.length === 0
+          ? '연동 시스템이 지원하는 조치가 없어 제안이 없습니다(정상).'
+          : 'AI가 이 사건에 제안한 조치가 없습니다.');
+      } else {
+        const proposalList = document.createElement('ul');
+        for (const proposal of data.proposals) {
+          const item = document.createElement('li');
+          item.textContent = `${proposal.action} — 이유: ${proposal.reason} · 근거 ID: ${proposal.evidenceIds.join(', ')} · 사람 확인이 필요하며 실행되지 않았습니다.`;
+          proposalList.append(item);
+        }
+        root.append(proposalList);
+      }
+      line(root, 'AI 설명과 제안만으로 보안 조치는 실행되지 않았습니다.');
       return root;
     },
     renderAction() { return '학생 구현 대기: 현재 사건·조치·실제 대상·사람 확인·ACK와 원천 효과·unknown을 구분하세요.'; },
